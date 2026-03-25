@@ -245,6 +245,10 @@ describe("LiveApp", () => {
     expect(screen.getByText("outsider@example.com")).toBeInTheDocument();
   });
 
+  /**
+   * Defaults new runs to autonomous mode and only reveals optional seed metadata
+   * after a company or domain seed exists.
+   */
   it("opens the new-run modal, validates, and submits a run", async () => {
     const deps = new FakeLiveDeps({
       authSession: {
@@ -259,6 +263,14 @@ describe("LiveApp", () => {
     render(<LiveApp deps={deps} />);
 
     await user.click(screen.getByRole("button", { name: "New Run" }));
+    expect(screen.getByRole("switch", { name: "✨ AI mode" })).toBeChecked();
+    expect(
+      screen.getByText("Enabled · Fully autonomous"),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Industry")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Address")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Tags")).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "Launch Run" }));
 
     expect(
@@ -266,6 +278,8 @@ describe("LiveApp", () => {
     ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Company"), "Example Holdings");
+    expect(screen.getByLabelText("Industry")).toBeInTheDocument();
+    expect(screen.getByLabelText("Address")).toBeInTheDocument();
     await user.type(
       screen.getByLabelText("Domains"),
       "example.com, api.example.com",
@@ -274,19 +288,18 @@ describe("LiveApp", () => {
 
     await waitFor(() => expect(deps.createRunCalls).toHaveLength(1));
     expect(deps.createRunCalls[0]).toEqual({
-      mode: "manual",
+      mode: "autonomous",
       seeds: [
         {
           company_name: "Example Holdings",
           domains: ["example.com", "api.example.com"],
           address: undefined,
           industry: undefined,
-          tags: [],
         },
       ],
     });
     expect(
-      await screen.findByText(/Queued manual run run-created\./),
+      await screen.findByText(/Queued autonomous run run-created\./),
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(window.location.hash).toContain("run=run-created"),

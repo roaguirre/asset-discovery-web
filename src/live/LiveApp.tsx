@@ -70,7 +70,6 @@ type RunFormState = {
   domains: string;
   address: string;
   industry: string;
-  tags: string;
   mode: "autonomous" | "manual";
 };
 
@@ -94,8 +93,7 @@ const initialFormState: RunFormState = {
   domains: "",
   address: "",
   industry: "",
-  tags: "",
-  mode: "manual",
+  mode: "autonomous",
 };
 
 const hiddenTooltip: TooltipState = {
@@ -104,6 +102,26 @@ const hiddenTooltip: TooltipState = {
   left: 0,
   top: 0,
 };
+
+/**
+ * Normalizes comma- or newline-delimited input into non-empty values.
+ */
+function parseDelimitedValues(value: string): string[] {
+  return value
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Reveals optional seed fields only after the user has entered company or domain data.
+ */
+function hasSeedIdentityInput(formState: RunFormState): boolean {
+  return (
+    formState.companyName.trim().length > 0 ||
+    parseDelimitedValues(formState.domains).length > 0
+  );
+}
 
 const assetTabLabels: Record<LiveAssetTab, string> = {
   all: "All",
@@ -163,6 +181,7 @@ export default function LiveApp({ deps }: LiveAppProps) {
   const sourceMenuRef = useRef<HTMLDivElement | null>(null);
 
   const deferredAssetSearch = useDeferredValue(assetSearch);
+  const showOptionalSeedFields = hasSeedIdentityInput(formState);
   const selectedRun = runs.find((run) => run.id === route.runID) ?? null;
   const activeAssetTab = route.assetTab;
   const activeAssetSort = normalizeAssetSort(assetSort, activeAssetTab);
@@ -1590,61 +1609,65 @@ export default function LiveApp({ deps }: LiveAppProps) {
                 />
               </label>
               <div className="form-row">
+                <div className="mode-switch-field">
+                  <span className="mode-switch-label">Mode</span>
+                  <label className="mode-switch">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      aria-label="✨ AI mode"
+                      checked={formState.mode === "autonomous"}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          mode: event.target.checked ? "autonomous" : "manual",
+                        }))
+                      }
+                    />
+                    <span className="mode-switch-track" aria-hidden="true">
+                      <span className="mode-switch-thumb" />
+                    </span>
+                    <span className="mode-switch-copy">
+                      <strong>✨ AI mode</strong>
+                      <span>
+                        {formState.mode === "autonomous"
+                          ? "Enabled · Fully autonomous"
+                          : "Disabled · Human-in-the-loop"}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+                {showOptionalSeedFields ? (
+                  <label>
+                    Industry
+                    <input
+                      value={formState.industry}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          industry: event.target.value,
+                        }))
+                      }
+                      placeholder="Retail"
+                    />
+                  </label>
+                ) : null}
+              </div>
+              {showOptionalSeedFields ? (
                 <label>
-                  Mode
-                  <select
-                    value={formState.mode}
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        mode: event.target.value as RunFormState["mode"],
-                      }))
-                    }
-                  >
-                    <option value="manual">Human-in-the-loop</option>
-                    <option value="autonomous">Fully autonomous</option>
-                  </select>
-                </label>
-                <label>
-                  Industry
+                  Address
                   <input
-                    value={formState.industry}
+                    value={formState.address}
                     onChange={(event) =>
                       setFormState((current) => ({
                         ...current,
-                        industry: event.target.value,
+                        address: event.target.value,
                       }))
                     }
-                    placeholder="Retail"
+                    placeholder="San Francisco, CA"
                   />
                 </label>
-              </div>
-              <label>
-                Address
-                <input
-                  value={formState.address}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      address: event.target.value,
-                    }))
-                  }
-                  placeholder="San Francisco, CA"
-                />
-              </label>
-              <label>
-                Tags
-                <input
-                  value={formState.tags}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      tags: event.target.value,
-                    }))
-                  }
-                  placeholder="demo, close-group"
-                />
-              </label>
+              ) : null}
               {modalMessage ? (
                 <p className="status-line status-error">{modalMessage}</p>
               ) : null}
@@ -2666,14 +2689,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function buildCreateRunPayload(formState: RunFormState): CreateRunPayload {
-  const domains = formState.domains
-    .split(/[,\n]/)
-    .map((domain) => domain.trim())
-    .filter(Boolean);
-  const tags = formState.tags
-    .split(/[,\n]/)
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+  const domains = parseDelimitedValues(formState.domains);
 
   return {
     mode: formState.mode,
@@ -2683,7 +2699,6 @@ function buildCreateRunPayload(formState: RunFormState): CreateRunPayload {
         domains,
         address: formState.address.trim() || undefined,
         industry: formState.industry.trim() || undefined,
-        tags,
       },
     ],
   };

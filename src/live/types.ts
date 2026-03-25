@@ -115,6 +115,5 @@ export type CreateRunPayload = {
     domains?: string[];
     address?: string;
     industry?: string;
-    tags?: string[];
   }>;
 };

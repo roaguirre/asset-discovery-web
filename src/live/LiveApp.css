@@ -942,6 +942,83 @@ body {
   gap: 12px;
 }
 
+.mode-switch-field {
+  display: grid;
+  gap: 8px;
+}
+
+.mode-switch-label {
+  font-size: 0.92rem;
+}
+
+.mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid rgba(34, 25, 16, 0.14);
+  border-radius: 16px;
+  background: var(--panel-strong);
+  cursor: pointer;
+}
+
+.mode-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-switch-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 50px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(34, 25, 16, 0.16);
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.mode-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fffdf7;
+  box-shadow: 0 4px 10px rgba(34, 25, 16, 0.16);
+  transition: transform 120ms ease;
+}
+
+.mode-switch-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.mode-switch-copy strong {
+  font-size: 0.95rem;
+}
+
+.mode-switch-copy span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.mode-switch input:checked + .mode-switch-track {
+  background: rgba(205, 119, 44, 0.92);
+}
+
+.mode-switch input:checked + .mode-switch-track .mode-switch-thumb {
+  transform: translateX(20px);
+}
+
+.mode-switch input:focus-visible + .mode-switch-track {
+  box-shadow: 0 0 0 3px rgba(205, 119, 44, 0.18);
+}
+
 .modal-scrim {
   display: grid;
   place-items: center;
