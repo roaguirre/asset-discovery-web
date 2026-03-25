@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   render,
   screen,
@@ -38,6 +39,8 @@ class FakeLiveDeps implements LiveAppDeps {
     Set<(summary: LiveJudgeSummary) => void>
   >();
   eventListeners = new Map<string, Set<(events: LiveEventRecord[]) => void>>();
+  deferInitialAuth: boolean;
+  deferInitialRuns: boolean;
   signInWithGoogle = vi.fn(async () => undefined);
   signOut = vi.fn(async () => undefined);
   getIDToken = vi.fn(async () => "token");
@@ -56,6 +59,8 @@ class FakeLiveDeps implements LiveAppDeps {
     pivots?: Record<string, LivePivotRecord[]>;
     judgeSummaries?: Record<string, LiveJudgeSummary>;
     events?: Record<string, LiveEventRecord[]>;
+    deferInitialAuth?: boolean;
+    deferInitialRuns?: boolean;
   }) {
     this.authSession = config.authSession ?? null;
     this.runs = config.runs ?? [];
@@ -64,13 +69,17 @@ class FakeLiveDeps implements LiveAppDeps {
     this.pivots = config.pivots ?? {};
     this.judgeSummaries = config.judgeSummaries ?? {};
     this.events = config.events ?? {};
+    this.deferInitialAuth = config.deferInitialAuth ?? false;
+    this.deferInitialRuns = config.deferInitialRuns ?? false;
   }
 
   subscribeAuth(
     onSession: (session: LiveAuthSession | null) => void,
   ): Unsubscribe {
     this.authListeners.add(onSession);
-    onSession(this.authSession);
+    if (!this.deferInitialAuth) {
+      onSession(this.authSession);
+    }
     return () => {
       this.authListeners.delete(onSession);
     };
@@ -81,7 +90,9 @@ class FakeLiveDeps implements LiveAppDeps {
     onRuns: (runs: LiveRunRecord[]) => void,
   ): Unsubscribe {
     this.runListeners.add(onRuns);
-    onRuns(this.runs);
+    if (!this.deferInitialRuns) {
+      onRuns(this.runs);
+    }
     return () => {
       this.runListeners.delete(onRuns);
     };
@@ -169,8 +180,7 @@ class FakeLiveDeps implements LiveAppDeps {
       created_at: "2026-03-25T12:00:00Z",
       updated_at: "2026-03-25T12:00:00Z",
     };
-    this.runs = [run, ...this.runs];
-    this.runListeners.forEach((listener) => listener(this.runs));
+    this.emitRuns([run, ...this.runs]);
     return run;
   }
 
@@ -190,6 +200,24 @@ class FakeLiveDeps implements LiveAppDeps {
     return this.pivots[runID].find(
       (pivot) => pivot.id === pivotID,
     ) as LivePivotRecord;
+  }
+
+  /**
+   * Pushes the current auth session, or an override, through every auth
+   * subscriber so tests can control hydration timing.
+   */
+  emitAuthSession(session: LiveAuthSession | null = this.authSession): void {
+    this.authSession = session;
+    this.authListeners.forEach((listener) => listener(session));
+  }
+
+  /**
+   * Pushes the current runs snapshot, or an override, through every run
+   * subscriber so tests can control hydration timing.
+   */
+  emitRuns(runs: LiveRunRecord[] = this.runs): void {
+    this.runs = runs;
+    this.runListeners.forEach((listener) => listener(runs));
   }
 
   private addRunListener<T>(
@@ -230,6 +258,25 @@ describe("LiveApp", () => {
     expect(screen.getByText("Discovery Console")).toBeInTheDocument();
   });
 
+  it("holds the sign-in gate until auth hydration completes", async () => {
+    const deps = new FakeLiveDeps({ deferInitialAuth: true });
+
+    render(<LiveApp deps={deps} />);
+
+    expect(screen.getByText("Preparing Workspace")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Sign In With Google" }),
+    ).not.toBeInTheDocument();
+
+    await act(async () => {
+      deps.emitAuthSession(null);
+    });
+
+    expect(
+      await screen.findByRole("button", { name: "Sign In With Google" }),
+    ).toBeInTheDocument();
+  });
+
   it("blocks users outside the allowlist", () => {
     const deps = new FakeLiveDeps({
       authSession: {
@@ -243,6 +290,75 @@ describe("LiveApp", () => {
 
     expect(screen.getByText("Access Restricted")).toBeInTheDocument();
     expect(screen.getByText("outsider@example.com")).toBeInTheDocument();
+  });
+
+  it("keeps the empty-runs panel hidden until the first runs snapshot resolves", () => {
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      deferInitialRuns: true,
+    });
+
+    render(<LiveApp deps={deps} />);
+
+    expect(screen.getByText("Preparing Workspace")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Select a run or launch a new one."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the empty-runs panel after an empty first runs snapshot hydrates", async () => {
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      deferInitialRuns: true,
+    });
+
+    render(<LiveApp deps={deps} />);
+
+    await act(async () => {
+      deps.emitRuns([]);
+    });
+
+    expect(
+      await screen.findByText("Select a run or launch a new one."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Preparing Workspace"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("goes from the loading gate to the selected run on the first non-empty runs snapshot", async () => {
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      deferInitialRuns: true,
+    });
+
+    render(<LiveApp deps={deps} />);
+
+    expect(screen.getByText("Preparing Workspace")).toBeInTheDocument();
+
+    await act(async () => {
+      deps.emitRuns([buildRun("run-1")]);
+    });
+
+    expect(
+      screen.queryByText("Select a run or launch a new one."),
+    ).not.toBeInTheDocument();
+    expect(await screen.findByText("Selected Run")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "run-1" }),
+    ).toBeInTheDocument();
   });
 
   /**

@@ -138,6 +138,24 @@ const viewLabels: Record<LiveView, string> = {
 
 const drawerPreferenceKey = "asset-discovery-live:drawer-collapsed";
 
+/**
+ * Holds the UI on a neutral gate until auth and the first run selection settle.
+ */
+function BootstrapLoadingGate() {
+  return (
+    <main className="live-shell live-auth-shell" aria-busy="true">
+      <section className="live-auth-card" role="status" aria-live="polite">
+        <p className="eyebrow">Preparing Workspace</p>
+        <h1>Loading discovery console.</h1>
+        <p className="live-intro">
+          Restoring your session and latest runs before rendering the live
+          workspace.
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export default function LiveApp({ deps }: LiveAppProps) {
   const [session, setSession] = useState<LiveAuthSession | null>(null);
   const [authHydrated, setAuthHydrated] = useState(false);
@@ -269,6 +287,17 @@ export default function LiveApp({ deps }: LiveAppProps) {
     : runsHydrated
       ? "No runs yet"
       : "Loading runs";
+  const sessionRestricted =
+    session != null &&
+    (!session.emailVerified || !isAllowlistedEmail(session.email));
+  /**
+   * Avoids flashing the sign-in or empty-run screens while refresh bootstrap
+   * is still resolving the signed-in workspace state.
+   */
+  const workspaceBootstrapping =
+    session != null &&
+    !sessionRestricted &&
+    (!runsHydrated || (runs.length > 0 && selectedRun == null));
 
   useEffect(
     () =>
@@ -741,6 +770,10 @@ export default function LiveApp({ deps }: LiveAppProps) {
     setAccountMenuOpen(false);
   }
 
+  if (!authHydrated) {
+    return <BootstrapLoadingGate />;
+  }
+
   if (!session) {
     return (
       <main className="live-shell live-auth-shell">
@@ -774,7 +807,7 @@ export default function LiveApp({ deps }: LiveAppProps) {
     );
   }
 
-  if (!session.emailVerified || !isAllowlistedEmail(session.email)) {
+  if (sessionRestricted) {
     return (
       <main className="live-shell live-auth-shell">
         <section className="live-auth-card">
@@ -795,6 +828,10 @@ export default function LiveApp({ deps }: LiveAppProps) {
         </section>
       </main>
     );
+  }
+
+  if (workspaceBootstrapping) {
+    return <BootstrapLoadingGate />;
   }
 
   return (
