@@ -1608,36 +1608,36 @@ export default function LiveApp({ deps }: LiveAppProps) {
                   placeholder="example.com, api.example.com"
                 />
               </label>
-              <div className="form-row">
-                <div className="mode-switch-field">
-                  <span className="mode-switch-label">Mode</span>
-                  <label className="mode-switch">
-                    <input
-                      type="checkbox"
-                      role="switch"
-                      aria-label="✨ AI mode"
-                      checked={formState.mode === "autonomous"}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          mode: event.target.checked ? "autonomous" : "manual",
-                        }))
-                      }
-                    />
-                    <span className="mode-switch-track" aria-hidden="true">
-                      <span className="mode-switch-thumb" />
+              <div className="mode-switch-field">
+                <span className="mode-switch-label">Mode</span>
+                <label className="mode-switch">
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    aria-label="✨ AI mode"
+                    checked={formState.mode === "autonomous"}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        mode: event.target.checked ? "autonomous" : "manual",
+                      }))
+                    }
+                  />
+                  <span className="mode-switch-copy">
+                    <strong>✨ AI mode</strong>
+                    <span>
+                      {formState.mode === "autonomous"
+                        ? "Fully autonomous"
+                        : "Human-in-the-loop"}
                     </span>
-                    <span className="mode-switch-copy">
-                      <strong>✨ AI mode</strong>
-                      <span>
-                        {formState.mode === "autonomous"
-                          ? "Enabled · Fully autonomous"
-                          : "Disabled · Human-in-the-loop"}
-                      </span>
-                    </span>
-                  </label>
-                </div>
-                {showOptionalSeedFields ? (
+                  </span>
+                  <span className="mode-switch-track" aria-hidden="true">
+                    <span className="mode-switch-thumb" />
+                  </span>
+                </label>
+              </div>
+              {showOptionalSeedFields ? (
+                <div className="form-row">
                   <label>
                     Industry
                     <input
@@ -1651,22 +1651,20 @@ export default function LiveApp({ deps }: LiveAppProps) {
                       placeholder="Retail"
                     />
                   </label>
-                ) : null}
-              </div>
-              {showOptionalSeedFields ? (
-                <label>
-                  Address
-                  <input
-                    value={formState.address}
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        address: event.target.value,
-                      }))
-                    }
-                    placeholder="San Francisco, CA"
-                  />
-                </label>
+                  <label>
+                    Address
+                    <input
+                      value={formState.address}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          address: event.target.value,
+                        }))
+                      }
+                      placeholder="San Francisco, CA"
+                    />
+                  </label>
+                </div>
               ) : null}
               {modalMessage ? (
                 <p className="status-line status-error">{modalMessage}</p>
