@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
 
 :root {
   --bg: #f4efe6;
@@ -27,10 +27,18 @@ body {
   overflow: hidden;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(216, 76, 31, 0.16), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(31, 122, 69, 0.13), transparent 24%),
+    radial-gradient(
+      circle at top left,
+      rgba(216, 76, 31, 0.16),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(31, 122, 69, 0.13),
+      transparent 24%
+    ),
     linear-gradient(140deg, #f4efe6 0%, #ede3d5 48%, #f7f0e7 100%);
-  font-family: 'Space Grotesk', 'Avenir Next', sans-serif;
+  font-family: "Space Grotesk", "Avenir Next", sans-serif;
 }
 
 .live-shell {
@@ -80,7 +88,9 @@ body {
 .eyebrow {
   margin: 0 0 10px;
   color: var(--accent);
-  font: 600 0.78rem/1.2 'IBM Plex Mono', monospace;
+  font:
+    600 0.78rem/1.2 "IBM Plex Mono",
+    monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -131,7 +141,12 @@ body {
 .run-selector-trigger,
 .run-selector-item {
   border: 0;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 .hero-button,
@@ -150,6 +165,14 @@ body {
 .hero-button,
 .ghost-button {
   padding: 12px 18px;
+}
+
+.hero-button,
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .hero-button {
@@ -529,9 +552,11 @@ body {
 
 .run-selector-trigger:hover,
 .run-selector-trigger:focus-visible,
-.run-selector-trigger[aria-expanded='true'] {
+.run-selector-trigger[aria-expanded="true"] {
   border-color: rgba(216, 76, 31, 0.34);
-  box-shadow: 0 0 0 3px rgba(216, 76, 31, 0.1), 0 16px 30px rgba(73, 44, 15, 0.08);
+  box-shadow:
+    0 0 0 3px rgba(216, 76, 31, 0.1),
+    0 16px 30px rgba(73, 44, 15, 0.08);
   outline: none;
 }
 
@@ -621,8 +646,14 @@ body {
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(216, 76, 31, 0.2), rgba(192, 134, 21, 0.2));
-  font: 700 0.82rem/1 'IBM Plex Mono', monospace;
+  background: linear-gradient(
+    135deg,
+    rgba(216, 76, 31, 0.2),
+    rgba(192, 134, 21, 0.2)
+  );
+  font:
+    700 0.82rem/1 "IBM Plex Mono",
+    monospace;
 }
 
 .account-menu {
@@ -745,7 +776,8 @@ body {
 .audit-header,
 .detail-source-grid,
 .detail-meta,
-.asset-toolbar {
+.asset-toolbar,
+.run-overview-footer {
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -760,6 +792,17 @@ body {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+.run-overview-footer {
+  margin-top: 16px;
+}
+
+.run-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .stat-card {
@@ -783,7 +826,8 @@ body {
 .create-form input,
 .create-form textarea,
 .create-form select,
-.trace-select select {
+.trace-select select,
+.filter-field select {
   box-sizing: border-box;
   border: 1px solid rgba(34, 25, 16, 0.14);
   border-radius: 16px;
@@ -798,6 +842,62 @@ body {
   gap: 14px;
   width: min(560px, 100%);
   min-width: 0;
+}
+
+.domain-filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.filter-field {
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select-trigger {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(34, 25, 16, 0.14);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.multi-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 12;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 25, 16, 0.08);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+}
+
+.multi-select-options {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.multi-select-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 6px;
+  border-radius: 12px;
 }
 
 .asset-tabs {
@@ -892,6 +992,17 @@ body {
   min-width: 260px;
 }
 
+.asset-table-domains th:first-child,
+.asset-table-domains td:first-child {
+  min-width: 52px;
+  width: 52px;
+}
+
+.asset-table-domains th:nth-child(2),
+.asset-table-domains td:nth-child(2) {
+  min-width: 260px;
+}
+
 .asset-table th {
   position: sticky;
   top: 0;
@@ -900,7 +1011,9 @@ body {
 }
 
 .sort-button {
-  font: 600 0.82rem/1.2 'IBM Plex Mono', monospace;
+  font:
+    600 0.82rem/1.2 "IBM Plex Mono",
+    monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   background: transparent;
@@ -912,6 +1025,10 @@ body {
 .asset-identifier-stack {
   display: grid;
   gap: 8px;
+}
+
+.asset-identifier-stack.nested {
+  padding-left: 10px;
 }
 
 .identifier-trigger {
@@ -997,6 +1114,148 @@ body {
 
 .pivot-columns {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+.trace-explorer,
+.judge-analysis-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.trace-workspace-live,
+.judge-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 16px;
+}
+
+.trace-tree-shell-live,
+.trace-panel-shell-live,
+.judge-group-card,
+.judge-candidate-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(34, 25, 16, 0.08);
+}
+
+.trace-tree-list,
+.trace-node-detail-stack,
+.judge-column {
+  display: grid;
+  gap: 12px;
+}
+
+.trace-tree-node {
+  display: grid;
+  gap: 10px;
+}
+
+.trace-tree-children {
+  display: grid;
+  gap: 10px;
+  padding-left: 18px;
+  border-left: 1px solid rgba(34, 25, 16, 0.08);
+  margin-left: 14px;
+}
+
+.trace-node-button,
+.group-toggle {
+  border: 0;
+  cursor: pointer;
+}
+
+.trace-node-button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.52);
+  text-align: left;
+}
+
+.trace-node-button.is-active {
+  border: 1px solid rgba(216, 76, 31, 0.24);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.trace-node-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.trace-node-copy span,
+.trace-node-detail-list,
+.related-trace-card span,
+.related-trace-card small {
+  color: var(--muted);
+}
+
+.trace-node-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.trace-node-detail-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.trace-stat-row,
+.judge-analysis-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.related-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.related-trace-card {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  text-align: left;
+}
+
+.group-toggle-cell,
+.group-toggle-header,
+.group-toggle-spacer {
+  text-align: center;
+  padding-right: 0;
+}
+
+.group-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(34, 25, 16, 0.08);
+}
+
+.group-toggle:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.domain-group-row td,
+.domain-child-row td {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.judge-group-card,
+.judge-column,
+.judge-candidate-card {
+  display: grid;
+  gap: 12px;
 }
 
 .detail-card,
@@ -1150,7 +1409,10 @@ body {
 @media (max-width: 1260px) {
   .detail-grid,
   .trace-grid,
-  .pivot-columns {
+  .pivot-columns,
+  .trace-workspace-live,
+  .judge-columns,
+  .domain-filter-row {
     grid-template-columns: 1fr;
   }
 
@@ -1179,7 +1441,10 @@ body {
     opacity: 0;
     pointer-events: none;
     transform: translateX(-100%);
-    transition: transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+    transition:
+      transform 180ms ease,
+      opacity 180ms ease,
+      box-shadow 180ms ease;
   }
 
   .app-drawer.is-open {
