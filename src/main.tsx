@@ -1,5 +1,21 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+import { liveModeEnabled } from './live/env'
 
-createRoot(document.getElementById('root')!).render(<App />)
+const root = createRoot(document.getElementById('root')!)
+
+void bootstrap()
+
+async function bootstrap(): Promise<void> {
+  if (liveModeEnabled()) {
+    const [{ default: LiveApp }, { buildFirebaseLiveDeps }] = await Promise.all([
+      import('./live/LiveApp.tsx'),
+      import('./live/firebaseDeps'),
+    ])
+    root.render(<LiveApp deps={buildFirebaseLiveDeps()} />)
+    return
+  }
+
+  const { default: App } = await import('./App.tsx')
+  root.render(<App />)
+}

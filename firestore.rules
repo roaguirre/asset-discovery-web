@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function allowlistedEmail() {
+      return request.auth.token.email == 'roaguirred@gmail.com' ||
+        request.auth.token.email.matches('.*@zerofox\\.com$');
+    }
+
+    function owner(uid) {
+      return signedIn() && allowlistedEmail() && request.auth.uid == uid;
+    }
+
+    match /runs/{runId} {
+      allow read: if owner(resource.data.owner_uid);
+      allow write: if false;
+
+      match /{subcollection}/{docId} {
+        allow read: if owner(get(/databases/$(database)/documents/runs/$(runId)).data.owner_uid);
+        allow write: if false;
+      }
+    }
+  }
+}

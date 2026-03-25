@@ -1010,10 +1010,45 @@ function findTooltipElement(target: EventTarget | null): HTMLElement | null {
   return matched && document.body.contains(matched) ? matched : null
 }
 
+function resolveSelectedRunSummary(manifest: Manifest | null, requestedRunID: string): Manifest['runs'][number] | null {
+  if (!manifest?.runs.length) {
+    return null
+  }
+  if (requestedRunID) {
+    const matched = manifest.runs.find((run) => run.id === requestedRunID)
+    if (matched) {
+      return matched
+    }
+  }
+  return manifest.runs[0] ?? null
+}
+
+function resolveTraceSelection(run: Run | null, view: View, requestedAssetID: string): { view: View; assetId: string } {
+  if (view !== 'trace' || !run) {
+    return { view, assetId: requestedAssetID }
+  }
+
+  if (currentTrace(run, requestedAssetID)) {
+    return { view, assetId: requestedAssetID }
+  }
+
+  const fallbackAssetID =
+    run.traces?.[0]?.asset_id ?? visibleRows(run, 'domains', '', '', '', [], 'discovery_date', 'desc')[0]?.asset_id ?? ''
+  if (fallbackAssetID) {
+    return { view: 'trace', assetId: fallbackAssetID }
+  }
+
+  return { view: 'domains', assetId: '' }
+}
+
+function sanitizeSelectedValues(values: string[], availableValues: string[]): string[] {
+  return values.filter((value) => availableValues.includes(value))
+}
+
 function App() {
   const initialRoute = parseHash(window.location.hash)
   const sourceFilterRef = useRef<HTMLDivElement | null>(null)
-  const manifestURLRef = useRef<string>(resolveManifestURL())
+  const [manifestURL] = useState(() => resolveManifestURL())
   const copyTimerRef = useRef<number | null>(null)
 
   const [manifest, setManifest] = useState<Manifest | null>(null)
@@ -1048,10 +1083,8 @@ function App() {
 
   useEffect(() => {
     let active = true
-    setIsManifestLoading(true)
-    setManifestError('')
 
-    void fetchManifest(window.fetch.bind(window), manifestURLRef.current)
+    void fetchManifest(window.fetch.bind(window), manifestURL)
       .then((nextManifest) => {
         if (!active) {
           return
@@ -1073,20 +1106,10 @@ function App() {
     return () => {
       active = false
     }
-  }, [])
+  }, [manifestURL])
 
-  useEffect(() => {
-    if (!manifest?.runs.length) {
-      return
-    }
-    const candidate = runId && manifest.runs.some((run) => run.id === runId) ? runId : manifest.runs[0].id
-    if (candidate !== runId) {
-      setRunId(candidate)
-    }
-  }, [manifest, runId])
-
-  const selectedRunSummary =
-    manifest?.runs.find((summary) => summary.id === runId) ?? manifest?.runs[0] ?? null
+  const selectedRunSummary = resolveSelectedRunSummary(manifest, runId)
+  const selectedRunID = selectedRunSummary?.id ?? ''
   const run = selectedRunSummary ? (runCache[selectedRunSummary.id] ?? null) : null
 
   useEffect(() => {
@@ -1095,10 +1118,15 @@ function App() {
     }
 
     let active = true
-    setRunError('')
-    setRunLoadingID(selectedRunSummary.id)
+    queueMicrotask(() => {
+      if (!active) {
+        return
+      }
+      setRunError('')
+      setRunLoadingID(selectedRunSummary.id)
+    })
 
-    void fetchRun(window.fetch.bind(window), manifestURLRef.current, selectedRunSummary)
+    void fetchRun(window.fetch.bind(window), manifestURL, selectedRunSummary)
       .then((loadedRun) => {
         if (!active) {
           return
@@ -1113,14 +1141,14 @@ function App() {
       })
       .finally(() => {
         if (active) {
-          setRunLoadingID('')
+          setRunLoadingID((current) => (current === selectedRunSummary.id ? '' : current))
         }
       })
 
     return () => {
       active = false
     }
-  }, [runCache, selectedRunSummary])
+  }, [manifestURL, runCache, selectedRunSummary])
 
   useEffect(() => {
     const handleHashChange = (): void => {
@@ -1141,82 +1169,35 @@ function App() {
     }
   }, [])
 
+  const resolvedTraceSelection = resolveTraceSelection(run, view, traceAssetId)
+  const activeView = resolvedTraceSelection.view
+  const activeTraceAssetId = resolvedTraceSelection.assetId
+  const trace = currentTrace(run, activeTraceAssetId)
+  const activeTraceNodeId = findTraceNode(trace, traceNodeId)?.id ?? ''
+  const availableDomainKinds = run ? uniqueValues(run.rows, 'domain_kind') : []
+  const activeDomainKind = domainKind && availableDomainKinds.includes(domainKind) ? domainKind : ''
+  const availableResolutionStatuses = run
+    ? uniqueValues(run.rows.filter((row) => row.asset_type === 'domain'), 'resolution_status')
+    : []
+  const activeResolutionStatus =
+    resolutionStatus && availableResolutionStatuses.includes(resolutionStatus) ? resolutionStatus : ''
+  const availableSources = run ? uniqueSourceValues(rowsForSourceFilter(run.rows, activeView)) : []
+  const activeSources = sanitizeSelectedValues(sources, availableSources)
+  const rows = visibleRows(run, activeView, search, activeDomainKind, activeResolutionStatus, activeSources, sortKey, sortDirection)
+  const allDomainRows = run ? rowsForSourceFilter(run.rows, activeView) : []
+  const domainGroups = activeView === 'domains' ? buildDomainGroups(rows, allDomainRows) : []
+  const filtersAreActive = hasActiveDomainFilters(search, activeDomainKind, activeResolutionStatus, activeSources)
+  const displayedCount =
+    activeView === 'domains' ? displayedDomainRowCount(domainGroups, expandedDomainGroups, filtersAreActive) : rows.length
+
   useEffect(() => {
-    const nextHash = buildHash(view, runId, traceAssetId)
+    const nextHash = buildHash(activeView, selectedRunID, activeTraceAssetId)
     if (window.location.hash !== nextHash) {
       const url = new URL(window.location.href)
       url.hash = nextHash
       window.history.replaceState(null, '', url)
     }
-  }, [runId, traceAssetId, view])
-
-  useEffect(() => {
-    if (view !== 'trace') {
-      return
-    }
-    if (!run) {
-      return
-    }
-
-    const trace = currentTrace(run, traceAssetId)
-    if (trace) {
-      return
-    }
-
-    const nextTrace = run.traces?.[0]?.asset_id ?? visibleRows(run, 'domains', '', '', '', [], 'discovery_date', 'desc')[0]?.asset_id ?? ''
-    if (nextTrace) {
-      setTraceAssetId(nextTrace)
-      setTraceNodeId('')
-      return
-    }
-
-    setView('domains')
-    setTraceAssetId('')
-    setTraceNodeId('')
-  }, [run, traceAssetId, view])
-
-  const rows = visibleRows(run, view, search, domainKind, resolutionStatus, sources, sortKey, sortDirection)
-  const allDomainRows = run ? rowsForSourceFilter(run.rows, view) : []
-  const domainGroups = view === 'domains' ? buildDomainGroups(rows, allDomainRows) : []
-  const filtersAreActive = hasActiveDomainFilters(search, domainKind, resolutionStatus, sources)
-  const displayedCount = view === 'domains' ? displayedDomainRowCount(domainGroups, expandedDomainGroups, filtersAreActive) : rows.length
-  const trace = currentTrace(run, traceAssetId)
-
-  useEffect(() => {
-    if (view !== 'trace') {
-      return
-    }
-    const nextNode = findTraceNode(trace, traceNodeId)
-    if (nextNode) {
-      if (traceNodeId !== nextNode.id) {
-        setTraceNodeId(nextNode.id)
-      }
-      return
-    }
-    if (traceNodeId) {
-      setTraceNodeId('')
-    }
-  }, [trace, traceNodeId, view])
-
-  useEffect(() => {
-    if (!run) {
-      return
-    }
-    const availableDomainKinds = uniqueValues(run.rows, 'domain_kind')
-    if (domainKind && !availableDomainKinds.includes(domainKind)) {
-      setDomainKind('')
-    }
-
-    const availableResolutions = uniqueValues(run.rows.filter((row) => row.asset_type === 'domain'), 'resolution_status')
-    if (resolutionStatus && !availableResolutions.includes(resolutionStatus)) {
-      setResolutionStatus('')
-    }
-
-    const availableSources = uniqueSourceValues(rowsForSourceFilter(run.rows, view))
-    if (sources.some((source) => !availableSources.includes(source))) {
-      setSources(sources.filter((source) => availableSources.includes(source)))
-    }
-  }, [domainKind, resolutionStatus, run, sources, view])
+  }, [activeTraceAssetId, activeView, selectedRunID])
 
   useEffect(() => {
     if (!isSourceMenuOpen) {
@@ -1268,7 +1249,7 @@ function App() {
   const tableCaption =
     !selectedRunSummary
       ? 'No archived runs loaded.'
-      : view === 'domains'
+      : activeView === 'domains'
         ? `Showing ${domainGroups.length} registrable domains from ${rows.length} matching domain assets in ${selectedRunSummary.label}.`
         : `Showing ${rows.length} of ${run?.rows.length ?? selectedRunSummary.asset_count} rows from ${selectedRunSummary.label}.`
   const judgeSummary = run?.judge_summary
@@ -1278,11 +1259,12 @@ function App() {
       ? `Captured ${judgeSummary.evaluation_count || 0} judge evaluation${judgeSummary.evaluation_count === 1 ? '' : 's'} across ${(judgeSummary.accepted_count || 0) + (judgeSummary.discarded_count || 0)} unique candidate roots.`
       : 'No judge evaluations were captured for this run.'
   const runDownloads: Downloads | undefined = run?.downloads ?? selectedRunSummary?.downloads
-  const resultsHeadHTML = renderResultsHead(view, sortKey, sortDirection)
+  const activeRunID = selectedRunSummary?.id ?? selectedRunID
+  const resultsHeadHTML = renderResultsHead(activeView, sortKey, sortDirection)
   const resultsBodyHTML = renderResultsBody(
-    view,
+    activeView,
     run,
-    selectedRunSummary?.id ?? runId,
+    activeRunID,
     rows,
     domainGroups,
     expandedRows,
@@ -1386,7 +1368,7 @@ function App() {
     const traceLink = target.closest<HTMLElement>('[data-trace-link]')
     if (traceLink) {
       event.preventDefault()
-      openTrace(traceLink.dataset.runId || selectedRunSummary?.id || runId, traceLink.dataset.assetId || '')
+      openTrace(traceLink.dataset.runId || activeRunID, traceLink.dataset.assetId || '')
     }
   }
 
@@ -1405,7 +1387,7 @@ function App() {
     const traceLink = target.closest<HTMLElement>('[data-trace-link]')
     if (traceLink) {
       event.preventDefault()
-      openTrace(traceLink.dataset.runId || selectedRunSummary?.id || runId, traceLink.dataset.assetId || '')
+      openTrace(traceLink.dataset.runId || activeRunID, traceLink.dataset.assetId || '')
     }
   }
 
@@ -1448,7 +1430,7 @@ function App() {
         <section className="hero">
           <div className="eyebrow">Visualizer Loading</div>
           <h1>Asset Discovery Visualizer</h1>
-          <p>Loading archived run manifest from {manifestURLRef.current}.</p>
+          <p>Loading archived run manifest from {manifestURL}.</p>
         </section>
       </main>
     )
@@ -1466,14 +1448,9 @@ function App() {
     )
   }
 
-  const availableDomainKinds = run ? uniqueValues(run.rows, 'domain_kind') : []
-  const availableResolutionStatuses = run
-    ? uniqueValues(run.rows.filter((row) => row.asset_type === 'domain'), 'resolution_status')
-    : []
-  const availableSources = run ? uniqueSourceValues(rowsForSourceFilter(run.rows, view)) : []
-  const showingTrace = view === 'trace' && Boolean(trace)
-  const showingJudge = view === 'judge'
-  const showingResults = view === 'domains' || view === 'ips' || (!showingTrace && !showingJudge)
+  const showingTrace = activeView === 'trace' && Boolean(trace)
+  const showingJudge = activeView === 'judge'
+  const showingResults = activeView === 'domains' || activeView === 'ips' || (!showingTrace && !showingJudge)
 
   return (
     <>
@@ -1503,7 +1480,7 @@ function App() {
           <div className="eyebrow">Enumeration Results</div>
           <h1>Asset Discovery Visualizer</h1>
           <p>All archived discovery runs in one place. Choose a run, filter the table, and sort any column. Expand any row for deep details and trace provenance.</p>
-          <p className="muted">Manifest: {manifestURLRef.current}</p>
+          <p className="muted">Manifest: {manifestURL}</p>
         </section>
 
         <section className="controls">
@@ -1539,11 +1516,11 @@ function App() {
             />
           </div>
 
-          <div className="field" hidden={view !== 'domains'}>
+          <div className="field" hidden={activeView !== 'domains'}>
             <label htmlFor="domain-kind-filter">Domain Kind</label>
             <select
               id="domain-kind-filter"
-              value={domainKind}
+              value={activeDomainKind}
               onChange={(event) => setDomainKind(event.target.value)}
             >
               <option value="">All domain kinds</option>
@@ -1555,11 +1532,11 @@ function App() {
             </select>
           </div>
 
-          <div className="field" id="resolution-status-field" hidden={view !== 'domains'}>
+          <div className="field" id="resolution-status-field" hidden={activeView !== 'domains'}>
             <label htmlFor="resolution-status-filter">Resolution</label>
             <select
               id="resolution-status-filter"
-              value={resolutionStatus}
+              value={activeResolutionStatus}
               onChange={(event) => setResolutionStatus(event.target.value)}
             >
               <option value="">All resolution states</option>
@@ -1582,14 +1559,18 @@ function App() {
                 aria-expanded={isSourceMenuOpen}
                 onClick={() => setIsSourceMenuOpen((current) => !current)}
               >
-                {sources.length === 0 ? 'All sources' : sources.length === 1 ? sources[0] : `${sources.length} sources selected`}
+                {activeSources.length === 0
+                  ? 'All sources'
+                  : activeSources.length === 1
+                    ? activeSources[0]
+                    : `${activeSources.length} sources selected`}
               </button>
               <div className="multi-select-menu" id="source-filter-menu" hidden={!isSourceMenuOpen}>
                 <label className="multi-select-option multi-select-option-all" data-tooltip="Show assets from every source.">
                   <input
                     type="checkbox"
                     data-role="all"
-                    checked={sources.length === 0}
+                    checked={activeSources.length === 0}
                     onChange={() => setSources([])}
                   />
                   <span>All sources</span>
@@ -1599,7 +1580,7 @@ function App() {
                     <label key={source} className="multi-select-option" data-tooltip={describeSource(source)}>
                       <input
                         type="checkbox"
-                        checked={sources.includes(source)}
+                        checked={activeSources.includes(source)}
                         onChange={(event) => {
                           setSources((current) => {
                             if (event.target.checked) {
@@ -1660,13 +1641,13 @@ function App() {
                 {runLoadingID ? `Loading run ${runLoadingID}...` : tableCaption}
               </div>
               <div className="view-toggle" role="tablist" aria-label="Visualizer views">
-                <button type="button" id="domains-view-button" className={view === 'domains' ? 'is-active' : ''} onClick={() => setView('domains')}>
+                <button type="button" id="domains-view-button" className={activeView === 'domains' ? 'is-active' : ''} onClick={() => setView('domains')}>
                   Domains
                 </button>
-                <button type="button" id="ips-view-button" className={view === 'ips' ? 'is-active' : ''} onClick={() => setView('ips')}>
+                <button type="button" id="ips-view-button" className={activeView === 'ips' ? 'is-active' : ''} onClick={() => setView('ips')}>
                   IPs
                 </button>
-                <button type="button" id="judge-view-button" className={view === 'judge' ? 'is-active' : ''} onClick={() => setView('judge')}>
+                <button type="button" id="judge-view-button" className={activeView === 'judge' ? 'is-active' : ''} onClick={() => setView('judge')}>
                   Judge
                 </button>
                 <button
@@ -1674,13 +1655,13 @@ function App() {
                   id="trace-view-button"
                   className={showingTrace ? 'is-active' : ''}
                   onClick={() => {
-                    if (traceAssetId && currentTrace(run, traceAssetId)) {
+                    if (activeTraceAssetId && currentTrace(run, activeTraceAssetId)) {
                       setView('trace')
                       return
                     }
                     const nextAsset = rows[0]?.asset_id ?? run?.traces?.[0]?.asset_id ?? ''
                     if (nextAsset) {
-                      openTrace(selectedRunSummary?.id ?? runId, nextAsset)
+                      openTrace(activeRunID, nextAsset)
                     }
                   }}
                 >
@@ -1696,7 +1677,7 @@ function App() {
                   ['XLSX', runDownloads.xlsx],
                 ].map(([label, href]) =>
                   href ? (
-                    <a key={label} href={resolveRelativeURL(manifestURLRef.current, href)}>
+                    <a key={label} href={resolveRelativeURL(manifestURL, href)}>
                       {label}
                     </a>
                   ) : null,
@@ -1722,7 +1703,7 @@ function App() {
             </table>
           </div>
 
-          <p id="empty-state" style={{ display: showingResults && (view === 'domains' ? domainGroups.length === 0 : rows.length === 0) ? 'block' : 'none' }}>
+          <p id="empty-state" style={{ display: showingResults && (activeView === 'domains' ? domainGroups.length === 0 : rows.length === 0) ? 'block' : 'none' }}>
             No rows match the active filters.
           </p>
 
@@ -1745,16 +1726,16 @@ function App() {
             <div className="trace-workspace">
               <aside className="trace-tree-shell">
                 <div className="eyebrow">Trace Tree</div>
-                <div id="trace-tree" dangerouslySetInnerHTML={{ __html: renderTraceTree(trace, traceNodeId) }} />
+                <div id="trace-tree" dangerouslySetInnerHTML={{ __html: renderTraceTree(trace, activeTraceNodeId) }} />
               </aside>
               <section className="trace-panel-shell">
                 <div className="eyebrow">Node Details</div>
-                <div id="trace-panel" dangerouslySetInnerHTML={{ __html: renderTraceNodePanel(trace, traceNodeId) }} />
+                <div id="trace-panel" dangerouslySetInnerHTML={{ __html: renderTraceNodePanel(trace, activeTraceNodeId) }} />
               </section>
             </div>
             <div className="trace-related-shell">
               <h3>Related Results</h3>
-              <div id="trace-related" dangerouslySetInnerHTML={{ __html: renderTraceRelated(trace, selectedRunSummary?.id ?? runId) }} />
+              <div id="trace-related" dangerouslySetInnerHTML={{ __html: renderTraceRelated(trace, activeRunID) }} />
             </div>
           </section>
 

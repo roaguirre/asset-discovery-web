@@ -6,6 +6,7 @@ import { defineConfig } from 'vitest/config'
 
 const assetDiscoveryRepoRoot = resolve(__dirname, '../asset-discovery')
 const exportsRoot = resolve(assetDiscoveryRepoRoot, 'exports')
+const apiProxyTarget = process.env.ASSET_DISCOVERY_API_PROXY_TARGET || 'http://127.0.0.1:8080'
 
 function contentTypeFor(pathname: string): string {
   switch (extname(pathname).toLowerCase()) {
@@ -59,6 +60,30 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+      '/healthz': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+      '/healthz': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     environmentOptions: {
