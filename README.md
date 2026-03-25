@@ -1,23 +1,12 @@
 # asset-discovery-web
 
-This repository now has two client modes:
-
-- a Firebase-backed live workspace for authenticated demo users
-- the legacy archive visualizer fed by exporter fixtures and archived manifest/run JSON
-
-The Go backend lives in the sibling `asset-discovery` repository.
-
-## Live Workspace
-
-When Firebase env vars are present, the app boots the live client instead of the legacy archive visualizer.
+This repository contains the Firebase-backed live Asset Discovery workspace. The Go backend lives in the sibling `asset-discovery` repository.
 
 The live workspace includes:
 
 - Google sign-in through Firebase Auth
-- a fixed top-bar run selector plus drawer navigation
 - dedicated `Assets`, `Trace`, `Pivots`, and `Activity` views
-- asset tabs for `All`, `Domains`, and `IPs`
-- Firestore subscriptions for runs, assets, traces, pivots, seeds, and events
+- Firestore subscriptions for runs, assets, traces, pivots, judge analysis, seeds, and events
 - API writes to the Go backend for run creation and manual pivot decisions
 
 Manual runs pause for review and expose pending pivots in the `Pivots` view. Autonomous runs apply AI-recommended pivots automatically and surface those decisions in the same audit stream.
@@ -42,7 +31,7 @@ Copy [`.env.example`](.env.example) to `.env.local` and populate the Firebase we
 cp .env.example .env.local
 ```
 
-If the required Firebase env vars are absent, the app falls back to the legacy archive visualizer automatically.
+The app now requires live Firebase config to start. Missing required values fail fast at bootstrap.
 
 The current env surface is:
 
@@ -76,8 +65,6 @@ make server
 npm run dev
 ```
 
-The repo serves `/exports/*` from the sibling `../asset-discovery/exports` directory during local Vite dev and preview, so the legacy archive visualizer still works without copying files into this repo.
-
 ## Firebase Notes
 
 - `.firebaserc` points at the current demo project by default.
@@ -88,23 +75,7 @@ The repo serves `/exports/*` from the sibling `../asset-discovery/exports` direc
 
 ## Runtime Behavior
 
-- Live mode:
-  - Google sign-in through Firebase Auth
-  - Firestore subscriptions for runs, assets, traces, pivots, and events
-  - API writes to the Go backend via `/api/*`
-- Legacy mode:
-  - Default manifest URL: `/exports/visualizer/manifest.json`
-  - Alternate archive: `?manifest=<url-to-manifest.json>`
-  - Deep links: hash routes such as `#trace/<run-id>/<asset-id>`
-- During local `vite` dev and preview, `/exports/*` is served from the sibling `../asset-discovery/exports` directory automatically.
-
-## Contract Pinning
-
-The pinned exporter contract artifacts live under `contracts/visualizer/`:
-
-- `manifest.v1.schema.json`
-- `run.v1.schema.json`
-- `manifest.v1.fixture.json`
-- `run.v1.fixture.json`
-
-This repo validates those pinned fixtures in test and should only update them in sync with the Go exporter contract.
+- Google sign-in through Firebase Auth
+- Firestore subscriptions for runs, assets, traces, pivots, judge analysis, seeds, and events
+- API writes to the Go backend via `/api/*`
+- hash-based live navigation for `Assets`, `Trace`, `Pivots`, and `Activity`

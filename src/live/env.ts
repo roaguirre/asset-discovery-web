@@ -7,19 +7,25 @@ export type FirebaseConfig = {
   messagingSenderId?: string;
 };
 
-/**
- * liveModeEnabled reports whether the Firebase-backed live workspace has the
- * minimum client configuration needed to boot.
- */
-export function liveModeEnabled(): boolean {
-  return Boolean(readFirebaseConfig());
-}
+const requiredFirebaseEnvKeys = [
+  "VITE_FIREBASE_API_KEY",
+  "VITE_FIREBASE_AUTH_DOMAIN",
+  "VITE_FIREBASE_PROJECT_ID",
+  "VITE_FIREBASE_APP_ID",
+] as const;
 
 /**
- * readFirebaseConfig returns the configured Firebase web-app settings or null
- * when the environment is incomplete and the app should stay in archive mode.
+ * readFirebaseConfig returns the configured Firebase web-app settings and
+ * throws when required live configuration is missing.
  */
-export function readFirebaseConfig(): FirebaseConfig | null {
+export function readFirebaseConfig(): FirebaseConfig {
+  const missing = requiredFirebaseEnvKeys.filter((key) => {
+    return String(import.meta.env[key] ?? "").trim() === "";
+  });
+  if (missing.length > 0) {
+    throw new Error(`Missing required Firebase config: ${missing.join(", ")}`);
+  }
+
   const apiKey = String(import.meta.env.VITE_FIREBASE_API_KEY ?? "").trim();
   const authDomain = String(
     import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? "",
@@ -28,9 +34,6 @@ export function readFirebaseConfig(): FirebaseConfig | null {
     import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "",
   ).trim();
   const appId = String(import.meta.env.VITE_FIREBASE_APP_ID ?? "").trim();
-  if (!apiKey || !authDomain || !projectId || !appId) {
-    return null;
-  }
   return {
     apiKey,
     authDomain,

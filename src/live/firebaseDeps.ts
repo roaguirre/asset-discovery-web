@@ -30,9 +30,6 @@ import { resolveLiveURL, readFirebaseConfig } from "./env";
 
 export function buildFirebaseLiveDeps(): LiveAppDeps {
   const config = readFirebaseConfig();
-  if (!config) {
-    throw new Error("Firebase live mode is not configured.");
-  }
 
   const app = getApps()[0] ?? initializeApp(config);
   const auth = getAuth(app);

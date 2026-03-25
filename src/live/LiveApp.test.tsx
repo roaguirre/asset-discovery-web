@@ -264,9 +264,7 @@ describe("LiveApp", () => {
 
     await user.click(screen.getByRole("button", { name: "New Run" }));
     expect(screen.getByRole("switch", { name: "✨ AI mode" })).toBeChecked();
-    expect(
-      screen.getByText("Enabled · Fully autonomous"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Fully autonomous")).toBeInTheDocument();
     expect(screen.queryByLabelText("Industry")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Address")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Tags")).not.toBeInTheDocument();

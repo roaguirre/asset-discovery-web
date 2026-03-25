@@ -14,7 +14,7 @@ import type {
   JudgeGroup,
   TraceContributor,
   TraceNode,
-} from "../types";
+} from "./types";
 import { isAllowlistedEmail } from "./allowlist";
 import {
   assetSortTooltips,
