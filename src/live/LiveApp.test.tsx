@@ -44,6 +44,9 @@ class FakeLiveDeps implements LiveAppDeps {
   signInWithGoogle = vi.fn(async () => undefined);
   signOut = vi.fn(async () => undefined);
   getIDToken = vi.fn(async () => "token");
+  resolveRunArtifactURL = vi.fn(async (downloadPath: string) => {
+    return `https://downloads.test/${encodeURIComponent(downloadPath)}`;
+  });
   createRunCalls: CreateRunPayload[] = [];
   decidePivotCalls: Array<{
     runID: string;
@@ -329,9 +332,7 @@ describe("LiveApp", () => {
     expect(
       await screen.findByText("Select a run or launch a new one."),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText("Preparing Workspace"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Preparing Workspace")).not.toBeInTheDocument();
   });
 
   it("goes from the loading gate to the selected run on the first non-empty runs snapshot", async () => {
@@ -660,7 +661,7 @@ describe("LiveApp", () => {
     );
   });
 
-  it("shows run metrics and download links when exported artifacts are available", async () => {
+  it("shows run metrics and opens Storage-backed downloads when artifacts are available", async () => {
     const deps = new FakeLiveDeps({
       authSession: {
         uid: "uid-1",
@@ -675,26 +676,70 @@ describe("LiveApp", () => {
           judge_accepted_count: 2,
           judge_discarded_count: 2,
           downloads: {
-            json: "exports/runs/run-1/results.json",
-            csv: "exports/runs/run-1/results.csv",
+            json: "runs/run-1/results.json",
+            csv: "runs/run-1/results.csv",
           },
         }),
       ],
     });
+    const user = userEvent.setup();
+    const windowOpen = vi.fn();
+    const popupWindow = {
+      closed: false,
+      opener: null as Window | null,
+      location: {
+        replace: vi.fn(),
+      },
+      close: vi.fn(),
+    };
+    windowOpen.mockReturnValue(popupWindow);
+    vi.stubGlobal("open", windowOpen);
 
     render(<LiveApp deps={deps} />);
 
     expect(await screen.findByText("Seeds")).toBeInTheDocument();
     expect(screen.getByText("Enumerations")).toBeInTheDocument();
     expect(screen.getByText("Judge Accepted")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "JSON" })).toHaveAttribute(
-      "href",
-      "exports/runs/run-1/results.json",
+    await user.click(screen.getByRole("button", { name: "JSON" }));
+    expect(deps.resolveRunArtifactURL).toHaveBeenCalledWith(
+      "runs/run-1/results.json",
     );
-    expect(screen.getByRole("link", { name: "CSV" })).toHaveAttribute(
-      "href",
-      "exports/runs/run-1/results.csv",
+    expect(windowOpen).toHaveBeenCalledWith("", "_blank");
+    expect(popupWindow.location.replace).toHaveBeenCalledWith(
+      "https://downloads.test/runs%2Frun-1%2Fresults.json",
     );
+  });
+
+  it("shows explicit download states when artifacts are still missing", async () => {
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      runs: [buildRun("run-running", { status: "running" })],
+    });
+
+    render(<LiveApp deps={deps} />);
+
+    expect(await screen.findByText("Preparing exports...")).toBeInTheDocument();
+  });
+
+  it("shows downloads unavailable when a completed run has no published artifacts", async () => {
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      runs: [buildRun("run-complete", { status: "completed" })],
+    });
+
+    render(<LiveApp deps={deps} />);
+
+    expect(
+      await screen.findByText("Downloads unavailable"),
+    ).toBeInTheDocument();
   });
 
   it("keeps the desktop drawer toggle in the drawer and logs out from the account menu", async () => {

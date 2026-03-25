@@ -11,9 +11,17 @@ This repo is the live web client for Asset Discovery.
 5. **Tests are required for behavior changes**: If you change loading, routing, filtering, rendering, auth, or live dependency behavior, update or add Vitest coverage.
 6. **Prefer focused live fakes**: For live UI regressions, use the existing fake dependency pattern instead of rebuilding dead archive fixtures.
 
+### Local Dev
+
+- Preferred local UI command: `npm run dev`
+- Local UI development is intended to run alongside the sibling `asset-discovery` backend started with `make server`
+- Copy `.env.example` to `.env.local` for local UI configuration
+- Leave `VITE_ASSET_DISCOVERY_API_BASE_URL` empty in `.env.local` for local work so Vite proxies `/api/*` and `/healthz` to `http://127.0.0.1:8080`
+
 ### Validation Commands
 
 - Install deps: `npm ci`
 - Run tests: `npm test`
 - Build production bundle: `npm run build`
 - Lint: `npm run lint`
+- Firestore rules tests: `npm run test:firebase:rules`

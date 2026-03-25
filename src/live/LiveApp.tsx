@@ -45,7 +45,6 @@ import {
   type DomainGroup,
 } from "./assetTable";
 import type { LiveAppDeps } from "./deps";
-import { resolveLiveURL } from "./env";
 import { buildLiveHash, emptyLiveRoute, parseLiveHash } from "./navigation";
 import type {
   CreateRunPayload,
@@ -183,6 +182,7 @@ export default function LiveApp({ deps }: LiveAppProps) {
   const [message, setMessage] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [busyAction, setBusyAction] = useState("");
+  const [downloadAction, setDownloadAction] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerCollapsed, setDrawerCollapsed] = useState(readDrawerPreference);
   const [compactViewport, setCompactViewport] = useState(() =>
@@ -631,6 +631,32 @@ export default function LiveApp({ deps }: LiveAppProps) {
       await deps.signOut();
     } finally {
       setBusyAction("");
+    }
+  }
+
+  async function handleDownloadArtifact(label: string, downloadPath: string) {
+    const openedWindow = window.open("", "_blank");
+    if (openedWindow) {
+      openedWindow.opener = null;
+    }
+    setDownloadAction(downloadPath);
+    setMessage("");
+    try {
+      const url = await deps.resolveRunArtifactURL(downloadPath);
+      if (openedWindow && !openedWindow.closed) {
+        openedWindow.location.replace(url);
+        return;
+      }
+      window.location.assign(url);
+    } catch (error) {
+      openedWindow?.close();
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : `Failed to open ${label} download.`,
+      );
+    } finally {
+      setDownloadAction("");
     }
   }
 
@@ -1107,33 +1133,69 @@ export default function LiveApp({ deps }: LiveAppProps) {
                       <>
                         <span className="muted-inline">Downloads</span>
                         {selectedRun.downloads?.json ? (
-                          <a
+                          <button
+                            type="button"
                             className="ghost-button compact"
-                            href={resolveLiveURL(selectedRun.downloads.json)}
+                            onClick={() =>
+                              handleDownloadArtifact(
+                                "JSON",
+                                selectedRun.downloads?.json ?? "",
+                              )
+                            }
+                            disabled={
+                              downloadAction === selectedRun.downloads.json
+                            }
                           >
-                            JSON
-                          </a>
+                            {downloadAction === selectedRun.downloads.json
+                              ? "Opening JSON..."
+                              : "JSON"}
+                          </button>
                         ) : null}
                         {selectedRun.downloads?.csv ? (
-                          <a
+                          <button
+                            type="button"
                             className="ghost-button compact"
-                            href={resolveLiveURL(selectedRun.downloads.csv)}
+                            onClick={() =>
+                              handleDownloadArtifact(
+                                "CSV",
+                                selectedRun.downloads?.csv ?? "",
+                              )
+                            }
+                            disabled={
+                              downloadAction === selectedRun.downloads.csv
+                            }
                           >
-                            CSV
-                          </a>
+                            {downloadAction === selectedRun.downloads.csv
+                              ? "Opening CSV..."
+                              : "CSV"}
+                          </button>
                         ) : null}
                         {selectedRun.downloads?.xlsx ? (
-                          <a
+                          <button
+                            type="button"
                             className="ghost-button compact"
-                            href={resolveLiveURL(selectedRun.downloads.xlsx)}
+                            onClick={() =>
+                              handleDownloadArtifact(
+                                "XLSX",
+                                selectedRun.downloads?.xlsx ?? "",
+                              )
+                            }
+                            disabled={
+                              downloadAction === selectedRun.downloads.xlsx
+                            }
                           >
-                            XLSX
-                          </a>
+                            {downloadAction === selectedRun.downloads.xlsx
+                              ? "Opening XLSX..."
+                              : "XLSX"}
+                          </button>
                         ) : null}
                       </>
                     ) : (
                       <span className="muted-inline">
-                        Downloads appear once the run exports result artifacts.
+                        {selectedRun.status === "completed" ||
+                        selectedRun.status === "failed"
+                          ? "Downloads unavailable"
+                          : "Preparing exports..."}
                       </span>
                     )}
                   </div>

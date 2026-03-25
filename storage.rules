@@ -1,7 +1,7 @@
 rules_version = '2';
 
-service cloud.firestore {
-  match /databases/{database}/documents {
+service firebase.storage {
+  match /b/{bucket}/o {
     function signedIn() {
       return request.auth != null && request.auth.token.email_verified == true;
     }
@@ -21,15 +21,14 @@ service cloud.firestore {
       return signedIn() && allowlistedEmail() && requestUidMatches(uid);
     }
 
-    match /runs/{runId} {
-      allow read: if resource != null && owner(resource.data.owner_uid);
+    match /{artifactPrefix}/{runId}/{fileName} {
+      allow read: if firestore.exists(/databases/(default)/documents/runs/$(runId)) &&
+        owner(firestore.get(/databases/(default)/documents/runs/$(runId)).data.owner_uid);
       allow write: if false;
+    }
 
-      match /{subcollection}/{docId} {
-        allow read: if exists(/databases/$(database)/documents/runs/$(runId)) &&
-          owner(get(/databases/$(database)/documents/runs/$(runId)).data.owner_uid);
-        allow write: if false;
-      }
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

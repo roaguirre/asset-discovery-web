@@ -2,5 +2,15 @@
   "projects": {
     "default": "asset-discovery-0325-f111",
     "legacy-native": "raguirre-1e03f"
-  }
+  },
+  "targets": {
+    "asset-discovery-0325-f111": {
+      "storage": {
+        "exports": [
+          "asset-discovery-0325-f111-exports"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

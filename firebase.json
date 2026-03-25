@@ -3,10 +3,20 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "storage": [
+    {
+      "target": "exports",
+      "rules": "storage.rules"
+    }
+  ],
   "emulators": {
     "firestore": {
       "host": "127.0.0.1",
       "port": 8080
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9199
     },
     "ui": {
       "enabled": false
@@ -14,11 +24,7 @@
   },
   "hosting": {
     "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "**",

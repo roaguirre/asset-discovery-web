@@ -41,6 +41,7 @@ The current env surface is:
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_EXPORTS_BUCKET`
 - `VITE_ASSET_DISCOVERY_API_BASE_URL`
 
 For local development, prefer leaving `VITE_ASSET_DISCOVERY_API_BASE_URL` empty. Vite then proxies `/api/*` and `/healthz` to `http://127.0.0.1:8080` automatically.
@@ -65,17 +66,27 @@ make server
 npm run dev
 ```
 
+The live download flow resolves artifact paths from Firebase Storage rather than serving same-origin `/exports/*` files. New runs need `VITE_FIREBASE_EXPORTS_BUCKET` in the web app and `ASSET_DISCOVERY_EXPORT_GCS_BUCKET` in the Go server to show working download actions.
+
 ## Firebase Notes
 
 - `.firebaserc` points at the current demo project by default.
 - Google sign-in must be enabled in Firebase Auth for the selected project.
 - `localhost` and `127.0.0.1` must be authorized auth domains for local popup sign-in.
+- The artifact bucket uses a named Firebase Storage target. Bind it before deploying Storage rules:
 
-`npm run test:firebase:rules` starts the Firestore emulator through the Firebase CLI, applies [`firestore.rules`](firestore.rules), and verifies creator-only reads plus the client-write deny rules. The wrapper script automatically selects an installed JDK 21+ when the system default Java is older.
+```bash
+npx -y firebase-tools@latest target:apply storage exports <artifact-bucket>
+```
+
+`npm run test:firebase:rules` starts the Firestore and Storage emulators through the Firebase CLI, applies [`firestore.rules`](firestore.rules) and [`storage.rules`](storage.rules), and verifies creator-only reads plus the client-write deny rules. The wrapper script automatically selects an installed JDK 21+ when the system default Java is older.
+
+Existing runs are not backfilled. Only runs completed after the artifact publisher is configured will show working download actions.
 
 ## Runtime Behavior
 
 - Google sign-in through Firebase Auth
 - Firestore subscriptions for runs, assets, traces, pivots, judge analysis, seeds, and events
+- Storage-backed artifact downloads through the Firebase Storage SDK
 - API writes to the Go backend via `/api/*`
 - hash-based live navigation for `Assets`, `Trace`, `Pivots`, and `Activity`

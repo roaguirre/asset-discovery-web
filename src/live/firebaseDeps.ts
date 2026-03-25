@@ -16,6 +16,11 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import {
+  getDownloadURL,
+  getStorage,
+  ref as storageRef,
+} from "firebase/storage";
 import type { LiveAppDeps } from "./deps";
 import type {
   LiveAssetRow,
@@ -26,15 +31,18 @@ import type {
   LiveRunRecord,
   LiveTrace,
 } from "./types";
-import { resolveLiveURL, readFirebaseConfig } from "./env";
+import { readExportsBucket, resolveLiveURL, readFirebaseConfig } from "./env";
 
 export function buildFirebaseLiveDeps(): LiveAppDeps {
   const config = readFirebaseConfig();
+  const exportsBucket = readExportsBucket();
 
   const app = getApps()[0] ?? initializeApp(config);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const storage = getStorage(app, `gs://${exportsBucket}`);
   const provider = new GoogleAuthProvider();
+  const downloadURLCache = new Map<string, Promise<string>>();
 
   return {
     subscribeAuth(onSession) {
@@ -127,6 +135,25 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
         );
         onEvents(events);
       });
+    },
+    resolveRunArtifactURL(downloadPath) {
+      const trimmed = String(downloadPath ?? "").trim();
+      if (!trimmed) {
+        return Promise.reject(new Error("Run artifact path is required."));
+      }
+      const cached = downloadURLCache.get(trimmed);
+      if (cached) {
+        return cached;
+      }
+
+      const pending = getDownloadURL(storageRef(storage, trimmed)).catch(
+        (error: unknown) => {
+          downloadURLCache.delete(trimmed);
+          throw error;
+        },
+      );
+      downloadURLCache.set(trimmed, pending);
+      return pending;
     },
     async createRun(payload) {
       const token = await this.getIDToken();

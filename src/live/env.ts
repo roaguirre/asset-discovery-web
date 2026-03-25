@@ -57,8 +57,24 @@ export function readAPIBaseURL(): string {
 }
 
 /**
- * resolveLiveURL resolves live API and download paths against the configured
- * backend origin while preserving already-absolute URLs.
+ * readExportsBucket returns the configured Firebase Storage bucket used for
+ * downloadable run artifacts and throws when it is missing.
+ */
+export function readExportsBucket(): string {
+  const bucket = String(
+    import.meta.env.VITE_FIREBASE_EXPORTS_BUCKET ?? "",
+  ).trim();
+  if (!bucket) {
+    throw new Error(
+      "Missing required Firebase exports bucket: VITE_FIREBASE_EXPORTS_BUCKET",
+    );
+  }
+  return bucket;
+}
+
+/**
+ * resolveLiveURL resolves live API paths against the configured backend origin
+ * while preserving already-absolute URLs.
  */
 export function resolveLiveURL(pathname: string): string {
   const value = String(pathname ?? "").trim();

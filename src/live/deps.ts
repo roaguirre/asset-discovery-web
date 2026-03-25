@@ -42,6 +42,7 @@ export interface LiveAppDeps {
     runID: string,
     onEvents: (events: LiveEventRecord[]) => void,
   ): Unsubscribe;
+  resolveRunArtifactURL(downloadPath: string): Promise<string>;
   createRun(payload: CreateRunPayload): Promise<LiveRunRecord>;
   decidePivot(
     runID: string,
