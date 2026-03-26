@@ -1,7 +1,9 @@
 import type { MutableRefObject, ReactNode } from "react";
-import { SurfaceDrawerOverlay } from "../../../../app/SurfaceDrawerOverlay";
-import { SurfaceDrawerToggleButton } from "../../../../app/SurfaceDrawerToggleButton";
-import { SurfaceTopbar } from "../../../../app/SurfaceTopbar";
+import {
+  SurfaceDrawerOverlay,
+  SurfaceDrawerToggleButton,
+  SurfaceTopbar,
+} from "../../../../components/surface";
 import { formatDate, formatStatus, sessionInitials, sessionLabel } from "../formatters";
 import type {
   LiveAuthSession,

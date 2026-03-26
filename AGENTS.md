@@ -11,6 +11,7 @@ See `SOUL.md` for the repository's identity, values, and decision-making posture
 4. **Keep local dev usable**: If you touch `vite.config.ts`, preserve the `/api/*` and `/healthz` proxy behavior used with the sibling Go server.
 5. **Tests are required for behavior changes**: If you change loading, routing, filtering, rendering, auth, or live dependency behavior, update or add Vitest coverage.
 6. **Prefer focused live fakes**: For live UI regressions, use the existing fake dependency pattern instead of rebuilding dead archive fixtures.
+7. **Keep `src/app` narrow**: `src/app` is for application bootstrap, top-level composition, and global wiring only. If a UI module is reused by multiple features, put it under `src/components/*` or another explicit shared layer instead of `src/app`.
 
 ### Local Dev
 
