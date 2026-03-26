@@ -1,18 +1,30 @@
 import type { FocusEvent, MouseEvent } from "react";
 
+export type TooltipPlacement = "bottom" | "right";
+
 export type TooltipState = {
   visible: boolean;
   text: string;
-  left: number;
-  top: number;
+  x: number;
+  y: number;
+  placement: TooltipPlacement;
 };
 
 export const hiddenTooltip: TooltipState = {
   visible: false,
   text: "",
-  left: 0,
-  top: 0,
+  x: 0,
+  y: 0,
+  placement: "bottom",
 };
+
+/**
+ * resolveTooltipPlacement keeps tooltip placement declarative at the anchor so
+ * shared overlay callers can opt into side placement without custom handlers.
+ */
+function resolveTooltipPlacement(element: HTMLElement): TooltipPlacement {
+  return element.dataset.tooltipPlacement === "right" ? "right" : "bottom";
+}
 
 /**
  * findTooltipElement returns the closest still-mounted tooltip anchor from the
@@ -27,7 +39,7 @@ export function findTooltipElement(target: EventTarget | null): HTMLElement | nu
 }
 
 /**
- * showTooltip positions the shared tooltip beneath the current anchor.
+ * showTooltip positions the shared tooltip relative to the current anchor.
  */
 export function showTooltip(
   element: HTMLElement,
@@ -40,11 +52,24 @@ export function showTooltip(
     return;
   }
   const rect = element.getBoundingClientRect();
+  const placement = resolveTooltipPlacement(element);
+  if (placement === "right") {
+    setTooltip({
+      visible: true,
+      text,
+      x: rect.right + 12,
+      y: rect.top + rect.height / 2,
+      placement,
+    });
+    return;
+  }
+
   setTooltip({
     visible: true,
     text,
-    left: rect.left + rect.width / 2,
-    top: rect.bottom + 12,
+    x: rect.left + rect.width / 2,
+    y: rect.bottom + 12,
+    placement,
   });
 }
 

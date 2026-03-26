@@ -23,6 +23,14 @@ npm run test:firebase:rules
 npm run build
 ```
 
+Enable the tracked native Git hooks once per clone:
+
+```bash
+git config --local core.hooksPath .githooks
+```
+
+The local `pre-commit` hook runs `npm run lint`, `npm test`, and `npm run build`.
+
 ## Environment
 
 Copy [`.env.example`](.env.example) to `.env.local` and populate the Firebase web app values:

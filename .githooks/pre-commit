@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -eu
+
+HOOK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(git -C "$HOOK_DIR" rev-parse --show-toplevel)
+
+cd "$REPO_ROOT"
+
+run_step() {
+  printf '%s\n' "pre-commit: $1"
+  shift
+  "$@"
+}
+
+run_step "npm run lint" npm run lint
+run_step "npm test" npm test
+run_step "npm run build" npm run build

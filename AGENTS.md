@@ -1,6 +1,7 @@
 # AGENTS.md
 
 This repo is the live web client for Asset Discovery.
+See `SOUL.md` for the repository's identity, values, and decision-making posture; use this file for concrete workflow and implementation rules.
 
 ### Workflow Rules
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { CreateRunModal } from "../features/discovery/ui/components/CreateRunModal";
 import { RunOverviewPanel } from "../features/discovery/ui/components/RunOverviewPanel";
@@ -15,6 +15,13 @@ import { ActivityView } from "../features/discovery/ui/views/ActivityView";
 import { AssetsView } from "../features/discovery/ui/views/AssetsView";
 import { PivotsView } from "../features/discovery/ui/views/PivotsView";
 import { TraceView } from "../features/discovery/ui/views/TraceView";
+import {
+  buildWorkspaceSurfaceURL,
+  hasLiveHashState,
+  parseExplicitSurface,
+  type AppSurface,
+} from "../features/presentation/core/surface";
+import { PresentationSite } from "../features/presentation/ui/PresentationSite";
 
 type AppProps = {
   deps: LiveAppDeps;
@@ -40,11 +47,34 @@ function BootstrapLoadingGate() {
 }
 
 /**
- * App is the composition root for the live workspace. It owns only the
- * top-level gating and shared tooltip overlay while delegating orchestration to
- * the workspace controller and presentation to focused view components.
+ * resolveSurface decides whether the public story or the live workspace should
+ * own the current URL. Explicit surface params win, live hashes preserve deep
+ * links, and hydrated sessions default back into the console.
  */
-export default function App({ deps }: AppProps) {
+function resolveSurface(
+  search: string,
+  hash: string,
+  authHydrated: boolean,
+  sessionActive: boolean,
+): AppSurface | null {
+  const explicitSurface = parseExplicitSurface(search);
+  if (explicitSurface != null) {
+    return explicitSurface;
+  }
+  if (hasLiveHashState(hash)) {
+    return "workspace";
+  }
+  if (!authHydrated) {
+    return null;
+  }
+  return sessionActive ? "workspace" : "story";
+}
+
+/**
+ * LiveWorkspaceSurface is the existing authenticated console. It remains
+ * unchanged in behavior, but now sits behind the public story surface.
+ */
+function LiveWorkspaceSurface({ deps }: AppProps) {
   const workspace = useWorkspace(deps);
   const [tooltip, setTooltip] = useState(hiddenTooltip);
 
@@ -261,13 +291,79 @@ export default function App({ deps }: AppProps) {
 
       {tooltip.visible ? (
         <div
-          className="live-tooltip"
           role="tooltip"
-          style={{ left: tooltip.left, top: tooltip.top }}
+          className={`live-tooltip is-${tooltip.placement}`}
+          style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }}
         >
           {tooltip.text}
         </div>
       ) : null}
     </main>
   );
+}
+
+/**
+ * App decides whether the public story or the live workspace should own the
+ * current route. The story is the public default for signed-out visitors, while
+ * existing sessions and live deep links still enter the console directly.
+ */
+export default function App({ deps }: AppProps) {
+  const [authHydrated, setAuthHydrated] = useState(false);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [surface, setSurface] = useState<AppSurface | null>(() =>
+    resolveSurface(window.location.search, window.location.hash, false, false),
+  );
+
+  useEffect(
+    () =>
+      deps.subscribeAuth((session) => {
+        setAuthHydrated(true);
+        setSessionActive(session != null);
+      }),
+    [deps],
+  );
+
+  useEffect(() => {
+    const syncSurface = () => {
+      setSurface(
+        resolveSurface(
+          window.location.search,
+          window.location.hash,
+          authHydrated,
+          sessionActive,
+        ),
+      );
+    };
+
+    syncSurface();
+    window.addEventListener("hashchange", syncSurface);
+    window.addEventListener("popstate", syncSurface);
+    return () => {
+      window.removeEventListener("hashchange", syncSurface);
+      window.removeEventListener("popstate", syncSurface);
+    };
+  }, [authHydrated, sessionActive]);
+
+  function openWorkspaceSurface() {
+    const nextURL = buildWorkspaceSurfaceURL();
+    window.history.pushState(null, "", nextURL);
+    setSurface("workspace");
+  }
+
+  if (surface == null) {
+    return <BootstrapLoadingGate />;
+  }
+
+  if (surface === "story") {
+    return (
+      <PresentationSite
+        authHydrated={authHydrated}
+        sessionActive={sessionActive}
+        onOpenWorkspace={openWorkspaceSurface}
+        onSignInToWorkspace={openWorkspaceSurface}
+      />
+    );
+  }
+
+  return <LiveWorkspaceSurface deps={deps} />;
 }

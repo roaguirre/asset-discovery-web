@@ -247,11 +247,62 @@ afterEach(() => {
 });
 
 describe("App", () => {
-  it("renders the sign-in gate and invokes Google sign-in", async () => {
+  it("renders the public story by default and opens the workspace on demand", async () => {
     const deps = new FakeLiveDeps({});
     const user = userEvent.setup();
 
     render(<App deps={deps} />);
+
+    const storyTopbar = document.querySelector(".story-topbar");
+    expect(storyTopbar).not.toBeNull();
+    expect(
+      within(storyTopbar as HTMLElement).getByText(
+        "AI-guided discovery with visible reasoning.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(storyTopbar as HTMLElement).getByRole("link", { name: "Promise" }),
+    ).toBeVisible();
+    expect(
+      within(storyTopbar as HTMLElement).getByRole("link", {
+        name: "Open frontend repository on GitHub",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/roaguirre/asset-discovery-web",
+    );
+    expect(
+      within(storyTopbar as HTMLElement).getByRole("link", {
+        name: "Open backend repository on GitHub",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/roaguirre/asset-discovery",
+    );
+    expect(
+      within(storyTopbar as HTMLElement).getByText("Public story mode"),
+    ).toBeInTheDocument();
+    expect(
+      within(storyTopbar as HTMLElement).getByRole("button", {
+        name: "Sign In For Live Demo",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Asset discovery should expand coverage without asking the team to trust a black box.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Sign In For Live Demo" })[0],
+    );
+
+    await waitFor(() =>
+      expect(window.location.search).toContain("surface=workspace"),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Sign In With Google" }),
+    ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Sign In With Google" }),
@@ -261,7 +312,8 @@ describe("App", () => {
     expect(screen.getByText("Discovery Console")).toBeInTheDocument();
   });
 
-  it("holds the sign-in gate until auth hydration completes", async () => {
+  it("holds the workspace sign-in gate until auth hydration completes", async () => {
+    window.history.replaceState(null, "", "/?surface=workspace");
     const deps = new FakeLiveDeps({ deferInitialAuth: true });
 
     render(<App deps={deps} />);
@@ -278,6 +330,33 @@ describe("App", () => {
     expect(
       await screen.findByRole("button", { name: "Sign In With Google" }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps the public story reachable even when a session already exists", () => {
+    window.history.replaceState(null, "", "/?surface=story");
+
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      runs: [buildRun("run-1")],
+    });
+
+    render(<App deps={deps} />);
+
+    expect(
+      screen.getByRole("link", {
+        name: /roaguirre\/asset-discovery-web/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: /roaguirre\/asset-discovery(?!-web)/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Selected Run")).not.toBeInTheDocument();
   });
 
   it("blocks users outside the allowlist", () => {
@@ -779,6 +858,18 @@ describe("App", () => {
     expect(screen.getAllByRole("button", { name: /navigation/i })).toHaveLength(
       1,
     );
+
+    const newRunButton = screen.getByRole("button", { name: "New Run" });
+    expect(newRunButton).toHaveAttribute("data-tooltip", "New Run");
+    expect(newRunButton).toHaveAttribute("data-tooltip-placement", "right");
+    await user.hover(newRunButton);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("New Run");
+
+    const assetsButton = screen.getByRole("button", { name: /Assets/i });
+    expect(assetsButton).toHaveAttribute("data-tooltip", "Assets");
+    expect(assetsButton).toHaveAttribute("data-tooltip-placement", "right");
+    await user.hover(assetsButton);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Assets");
 
     await user.click(screen.getByRole("button", { name: "Expand navigation" }));
     expect(screen.getByText("Discovery Console")).toBeInTheDocument();

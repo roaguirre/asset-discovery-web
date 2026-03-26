@@ -1,4 +1,5 @@
 import type { MutableRefObject, ReactNode } from "react";
+import { SurfaceTopbar } from "../../../../app/SurfaceTopbar";
 import { formatDate, formatStatus, sessionInitials, sessionLabel } from "../formatters";
 import type {
   LiveAuthSession,
@@ -78,105 +79,111 @@ export function WorkspaceChrome({
   onSignOut,
   children,
 }: WorkspaceChromeProps) {
+  const collapsedDrawer = !expandedDrawer;
+
   return (
     <>
-      <header className="workspace-topbar">
-        <div className="topbar-left">
-          {compactViewport ? (
+      <SurfaceTopbar
+        className="workspace-topbar"
+        start={
+          <div className="topbar-left">
+            {compactViewport ? (
+              <button
+                type="button"
+                className="topbar-drawer-toggle"
+                aria-label={drawerToggleLabel}
+                onClick={onDrawerToggle}
+              >
+                {drawerOpen ? <CloseIcon /> : <DrawerIcon />}
+              </button>
+            ) : null}
+            <div className="run-selector-shell" ref={runMenuRef}>
+              <button
+                type="button"
+                className="run-selector-trigger"
+                aria-label="Select run"
+                aria-haspopup="menu"
+                aria-expanded={runMenuOpen}
+                disabled={runs.length === 0}
+                onClick={onToggleRunMenu}
+              >
+                <span
+                  className="run-selector-label"
+                  title={selectedRun?.id || runSelectorLabel}
+                >
+                  {runSelectorLabel}
+                </span>
+                <ChevronDownIcon />
+              </button>
+              {runMenuOpen ? (
+                <section
+                  className="run-selector-menu"
+                  role="menu"
+                  aria-label="Run selector"
+                >
+                  {runs.map((run) => (
+                    <button
+                      key={run.id}
+                      type="button"
+                      className={`run-selector-item ${run.id === routeRunID ? "is-active" : ""}`}
+                      role="menuitemradio"
+                      aria-checked={run.id === routeRunID}
+                      onClick={() => onSelectRun(run.id)}
+                    >
+                      <div className="run-selector-item-copy">
+                        <strong>{run.id}</strong>
+                        <span>
+                          {run.mode === "manual"
+                            ? "Manual review enabled"
+                            : "Autonomous execution"}
+                        </span>
+                      </div>
+                      <div className="run-selector-item-meta">
+                        <span className={`status-pill status-${run.status}`}>
+                          {formatStatus(run.status)}
+                        </span>
+                        <span>{formatDate(run.updated_at)}</span>
+                        <span>{run.asset_count} assets</span>
+                      </div>
+                    </button>
+                  ))}
+                </section>
+              ) : null}
+            </div>
+          </div>
+        }
+        end={
+          <div className="account-shell" ref={accountMenuRef}>
             <button
               type="button"
-              className="topbar-drawer-toggle"
-              aria-label={drawerToggleLabel}
-              onClick={onDrawerToggle}
-            >
-              {drawerOpen ? <CloseIcon /> : <DrawerIcon />}
-            </button>
-          ) : null}
-          <div className="run-selector-shell" ref={runMenuRef}>
-            <button
-              type="button"
-              className="run-selector-trigger"
-              aria-label="Select run"
+              className="avatar-button"
+              aria-label="Open account menu"
               aria-haspopup="menu"
-              aria-expanded={runMenuOpen}
-              disabled={runs.length === 0}
-              onClick={onToggleRunMenu}
+              aria-expanded={accountMenuOpen}
+              onClick={onToggleAccountMenu}
             >
-              <span
-                className="run-selector-label"
-                title={selectedRun?.id || runSelectorLabel}
-              >
-                {runSelectorLabel}
-              </span>
-              <ChevronDownIcon />
+              <span className="avatar-face">{sessionInitials(session)}</span>
             </button>
-            {runMenuOpen ? (
-              <section
-                className="run-selector-menu"
-                role="menu"
-                aria-label="Run selector"
-              >
-                {runs.map((run) => (
-                  <button
-                    key={run.id}
-                    type="button"
-                    className={`run-selector-item ${run.id === routeRunID ? "is-active" : ""}`}
-                    role="menuitemradio"
-                    aria-checked={run.id === routeRunID}
-                    onClick={() => onSelectRun(run.id)}
-                  >
-                    <div className="run-selector-item-copy">
-                      <strong>{run.id}</strong>
-                      <span>
-                        {run.mode === "manual"
-                          ? "Manual review enabled"
-                          : "Autonomous execution"}
-                      </span>
-                    </div>
-                    <div className="run-selector-item-meta">
-                      <span className={`status-pill status-${run.status}`}>
-                        {formatStatus(run.status)}
-                      </span>
-                      <span>{formatDate(run.updated_at)}</span>
-                      <span>{run.asset_count} assets</span>
-                    </div>
-                  </button>
-                ))}
+            {accountMenuOpen ? (
+              <section className="account-menu" role="menu" aria-label="Account menu">
+                <div className="account-menu-header">
+                  <strong>{sessionLabel(session)}</strong>
+                  <span>{session.email}</span>
+                </div>
+                <button
+                  type="button"
+                  className="account-menu-item"
+                  role="menuitem"
+                  onClick={onSignOut}
+                  disabled={busyAction === "sign-out"}
+                >
+                  {busyAction === "sign-out" ? "Logging out..." : "Log out"}
+                </button>
               </section>
             ) : null}
           </div>
-        </div>
-
-        <div className="account-shell" ref={accountMenuRef}>
-          <button
-            type="button"
-            className="avatar-button"
-            aria-label="Open account menu"
-            aria-haspopup="menu"
-            aria-expanded={accountMenuOpen}
-            onClick={onToggleAccountMenu}
-          >
-            <span className="avatar-face">{sessionInitials(session)}</span>
-          </button>
-          {accountMenuOpen ? (
-            <section className="account-menu" role="menu" aria-label="Account menu">
-              <div className="account-menu-header">
-                <strong>{sessionLabel(session)}</strong>
-                <span>{session.email}</span>
-              </div>
-              <button
-                type="button"
-                className="account-menu-item"
-                role="menuitem"
-                onClick={onSignOut}
-                disabled={busyAction === "sign-out"}
-              >
-                {busyAction === "sign-out" ? "Logging out..." : "Log out"}
-              </button>
-            </section>
-          ) : null}
-        </div>
-      </header>
+        }
+      />
 
       <div
         className={`drawer-scrim ${drawerOpen ? "is-open" : ""}`}
@@ -208,6 +215,8 @@ export function WorkspaceChrome({
               type="button"
               className={expandedDrawer ? "hero-button drawer-cta" : "rail-action"}
               aria-label="New Run"
+              data-tooltip={collapsedDrawer ? "New Run" : undefined}
+              data-tooltip-placement={collapsedDrawer ? "right" : undefined}
               onClick={onOpenCreateModal}
             >
               {expandedDrawer ? (
@@ -227,6 +236,8 @@ export function WorkspaceChrome({
                   type="button"
                   className={`drawer-link ${activeView === item.view ? "is-active" : ""}`}
                   aria-label={`${item.label} ${item.count}`}
+                  data-tooltip={collapsedDrawer ? item.label : undefined}
+                  data-tooltip-placement={collapsedDrawer ? "right" : undefined}
                   onClick={() => onSelectView(item.view)}
                   disabled={!selectedRun}
                 >
