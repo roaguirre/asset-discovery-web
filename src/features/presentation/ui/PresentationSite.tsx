@@ -1,4 +1,27 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { SurfaceDrawerOverlay } from "../../../app/SurfaceDrawerOverlay";
+import { SurfaceDrawerToggleButton } from "../../../app/SurfaceDrawerToggleButton";
 import { SurfaceTopbar } from "../../../app/SurfaceTopbar";
+import {
+  StoryArchitectureDiagram,
+  StoryArchitecturePrinciples,
+  StoryCapabilityBand,
+  StoryCropFigure,
+  StoryJudgeAnalysisMock,
+  StoryProofStage,
+  StoryPivotsViewMock,
+  StoryRunOverviewMock,
+  StoryTraceExplorerMock,
+} from "./StoryMockViews";
+import {
+  storyCapabilityGroups,
+  storyCrops,
+  storyObservationBlocks,
+  storyProblemPoints,
+  storyRepositories,
+  walkthroughSteps,
+  type StoryCrop,
+} from "./storyModel";
 import "./PresentationSite.css";
 
 type PresentationSiteProps = {
@@ -8,164 +31,15 @@ type PresentationSiteProps = {
   onSignInToWorkspace: () => void;
 };
 
-type StoryRepository = {
-  surface: "frontend" | "backend";
-  label: string;
-  shortLabel: string;
-  name: string;
-  href: string;
-  license: string;
-  copy: string;
-};
-
-const storyRepositories: StoryRepository[] = [
-  {
-    surface: "frontend",
-    label: "Frontend",
-    shortLabel: "FE",
-    name: "roaguirre/asset-discovery-web",
-    href: "https://github.com/roaguirre/asset-discovery-web",
-    license: "MIT License",
-    copy:
-      "React and Firebase workspace for live runs, pivot review, grouped judge analysis, trace context, and presentation surfaces.",
-  },
-  {
-    surface: "backend",
-    label: "Backend",
-    shortLabel: "BE",
-    name: "roaguirre/asset-discovery",
-    href: "https://github.com/roaguirre/asset-discovery",
-    license: "MIT License",
-    copy:
-      "Go discovery engine for schedulers, collectors, enrichers, canonical assets, exports, and the DAG-oriented runtime model.",
-  },
-];
-
-const promiseCards = [
-  {
-    eyebrow: "Judgment",
-    title: "AI decides when pivots deserve attention, not blind promotion.",
-    copy:
-      "Cross-root candidates from web hints, sitemaps, crawler output, registration overlap, ASN/CIDR pivots, and PTR evidence are judged explicitly instead of silently merged into scope.",
-  },
-  {
-    eyebrow: "Coverage",
-    title: "Frontier expansion grows the run without turning the DAG into a loop.",
-    copy:
-      "Newly discovered seeds open later follow-up waves, and discarded candidates can be reconsidered once with the full run context gathered so far.",
-  },
-  {
-    eyebrow: "Trust",
-    title: "Every important outcome stays explainable inside the product.",
-    copy:
-      "Ownership state, inclusion reason, pivot rationale, grouped judge analysis, and trace context make the dataset defensible to humans who need to trust it.",
-  },
-];
-
-const problemCards = [
-  {
-    title: "Coverage expands faster than confidence.",
-    copy:
-      "Adding more pivots usually finds more assets, but it also increases ambiguity and review burden.",
-  },
-  {
-    title: "Heuristics hide the hard decisions.",
-    copy:
-      "When a system silently promotes weak candidates, the team inherits risk without understanding the reasoning.",
-  },
-  {
-    title: "Investigation flow fragments across tools.",
-    copy:
-      "Without pivots, assets, trace context, and audit in one place, comprehensiveness becomes difficult to defend.",
-  },
-];
-
-const walkthroughSteps = [
-  {
-    step: "1",
-    title: "Plant a compact seed set",
-    copy:
-      "Start from a company name and a small domain list. The demo is deliberately seeded narrowly so expansion becomes visible and explainable.",
-  },
-  {
-    step: "2",
-    title: "Run in manual mode first",
-    copy:
-      "Manual mode shows that AI recommendations do not remove human control. Pivots pause in review until the creator accepts or rejects them.",
-  },
-  {
-    step: "3",
-    title: "Inspect run metrics that matter",
-    copy:
-      "Wave count, seeds, assets, judge accepted and discarded counts, pending pivots, and exports make progress legible at a glance.",
-  },
-  {
-    step: "4",
-    title: "Review pivots and grouped judge outcomes",
-    copy:
-      "The product shows recommendation reason, score, confidence, support, and what the judge explicitly discarded, not only what it promoted.",
-  },
-  {
-    step: "5",
-    title: "Browse the asset set without losing context",
-    copy:
-      "Grouped domains, ownership state, inclusion reason, sources, and filters keep comprehensiveness useful instead of overwhelming.",
-  },
-  {
-    step: "6",
-    title: "Answer why an asset exists",
-    copy:
-      "Trace explorer carries contributors, relations, enrichment, and related assets into one view so the run can justify itself.",
-  },
-];
-
-const signalCards = [
-  {
-    title: "Collectors already in the demo",
-    items: [
-      "crt.sh and RDAP for public registration signals",
-      "DNS, web hints, sitemaps, and crawler output for web-root discovery",
-      "ASN/CIDR and PTR pivots for network expansion",
-      "Wayback and AlienVault for passive historical coverage",
-    ],
-  },
-  {
-    title: "Trust surfaces already in the UI",
-    items: [
-      "Pending pivot review and audit history",
-      "Grouped judge analysis with accepted and discarded candidates",
-      "Ownership state and inclusion reason on asset rows",
-      "Dedicated trace explorer for provenance and relations",
-    ],
-  },
-  {
-    title: "Delivery surfaces already available",
-    items: [
-      "Firebase-backed live run model",
-      "JSON, CSV, and XLSX exports",
-      "Manual and autonomous execution modes",
-      "A scheduler visualization for technical discussion",
-    ],
-  },
-];
-
-const architecturePoints = [
-  {
-    title: "Scheduler-owned frontier expansion",
-    copy:
-      "Collectors and enrichers never recurse into themselves. They hand new seeds back to the engine, which decides whether another wave should run.",
-  },
-  {
-    title: "Canonical assets plus raw provenance",
-    copy:
-      "Assets, observations, and relations are modeled separately so repeated sightings add evidence without creating duplicate rows.",
-  },
-  {
-    title: "Bounded reconsideration",
-    copy:
-      "Once the normal frontier is exhausted, discarded judge candidates can be reconsidered once with the full run context, keeping the process ambitious but controlled.",
-  },
-];
+const storyCropMap = new Map<StoryCrop["key"], StoryCrop>(
+  storyCrops.map((crop) => [crop.key, crop]),
+);
+const storyNavigationLinks = [
+  { href: "#promise", label: "Evidence" },
+  { href: "#walkthrough", label: "Walkthrough" },
+  { href: "#architecture", label: "Architecture" },
+  { href: "#open-source", label: "Open Source" },
+] as const;
 
 /**
  * GitHubMarkIcon keeps repository links visually consistent across the story
@@ -182,10 +56,14 @@ function GitHubMarkIcon() {
   );
 }
 
+function cropFor(key: StoryCrop["key"]) {
+  return storyCropMap.get(key) as StoryCrop;
+}
+
 /**
  * PresentationSite is the public story-first landing surface for the demo. It
- * frames the live workspace as a product proposal before the audience enters the
- * signed-in console.
+ * frames the live workspace as an editorial proof document before the audience
+ * enters the signed-in console.
  */
 export function PresentationSite({
   authHydrated,
@@ -193,15 +71,44 @@ export function PresentationSite({
   onOpenWorkspace,
   onSignInToWorkspace,
 }: PresentationSiteProps) {
+  const [compactViewport, setCompactViewport] = useState(() =>
+    isCompactStoryViewport(),
+  );
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const primaryActionLabel = sessionActive
     ? "Open Live Workspace"
     : "Sign In For Live Demo";
   const primaryAction = sessionActive ? onOpenWorkspace : onSignInToWorkspace;
   const sessionLabel = !authHydrated
-    ? "Checking demo session"
+    ? "Checking session"
     : sessionActive
-      ? "Authenticated demo session available"
-      : "Public story mode";
+      ? "Live session"
+      : "Public story";
+  const drawerToggleLabel = drawerOpen ? "Close navigation" : "Open navigation";
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 1100px)");
+    const syncViewport = () => {
+      const nextCompactViewport = mediaQuery.matches;
+      setCompactViewport(nextCompactViewport);
+      if (!nextCompactViewport) {
+        setDrawerOpen(false);
+      }
+    };
+
+    mediaQuery.addEventListener("change", syncViewport);
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
+  }, []);
+
+  const topbarClassName = compactViewport
+    ? "story-topbar is-compact"
+    : "story-topbar";
 
   return (
     <main className="story-shell" id="top">
@@ -209,44 +116,76 @@ export function PresentationSite({
       <div className="story-orbit story-orbit-two" aria-hidden="true" />
 
       <SurfaceTopbar
-        className="story-topbar"
+        className={topbarClassName}
+        innerClassName="story-topbar-inner"
         start={
-          <div className="story-brand-lockup">
-            <p className="eyebrow">Asset Discovery</p>
-            <strong className="story-brand">
-              AI-guided discovery with visible reasoning.
-            </strong>
+          <div
+            className={
+              compactViewport
+                ? "story-topbar-start-cluster"
+                : "story-brand-lockup"
+            }
+          >
+            {compactViewport ? (
+              <SurfaceDrawerToggleButton
+                open={drawerOpen}
+                label={drawerToggleLabel}
+                onToggle={() => setDrawerOpen((current) => !current)}
+              />
+            ) : null}
+            <div
+              className={
+                compactViewport
+                  ? "story-brand-lockup is-compact"
+                  : "story-brand-lockup"
+              }
+            >
+              <p className="eyebrow">Asset Discovery</p>
+              <strong className="story-brand">
+                AI-guided discovery with visible reasoning.
+              </strong>
+            </div>
           </div>
         }
         middle={
+          compactViewport ? null : (
           <nav className="story-nav" aria-label="Presentation sections">
-            <a href="#promise">Promise</a>
-            <a href="#walkthrough">Walkthrough</a>
-            <a href="#architecture">Architecture</a>
-            <a href="#open-source">Open Source</a>
+            {storyNavigationLinks.map((link) => (
+              <a key={link.href} href={link.href}>
+                {link.label}
+              </a>
+            ))}
           </nav>
+          )
         }
         end={
-          <div className="story-actions">
-            <div className="story-repo-links" aria-label="Source repositories">
-              {storyRepositories.map((repository) => (
-                <a
-                  key={repository.name}
-                  className="story-repo-link"
-                  href={repository.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`Open ${repository.label.toLowerCase()} repository on GitHub`}
-                  title={repository.name}
+          <div className={compactViewport ? "story-actions is-compact" : "story-actions"}>
+            {compactViewport ? null : (
+              <>
+                <div
+                  className="story-repo-links"
+                  aria-label="Source repositories"
                 >
-                  <GitHubMarkIcon />
-                  <span className="story-repo-link-label">
-                    {repository.shortLabel}
-                  </span>
-                </a>
-              ))}
-            </div>
-            <span className="story-status">{sessionLabel}</span>
+                  {storyRepositories.map((repository) => (
+                    <a
+                      key={repository.name}
+                      className="story-repo-link"
+                      href={repository.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${repository.label.toLowerCase()} repository on GitHub`}
+                      title={repository.name}
+                    >
+                      <GitHubMarkIcon />
+                      <span className="story-repo-link-label">
+                        {repository.shortLabel}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+                <span className="story-status">{sessionLabel}</span>
+              </>
+            )}
             <button
               type="button"
               className="hero-button compact"
@@ -258,15 +197,72 @@ export function PresentationSite({
         }
       />
 
+      {compactViewport ? (
+        <SurfaceDrawerOverlay
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          ariaLabel="Story navigation"
+          scrimClassName="story-drawer-scrim"
+          drawerClassName="story-drawer"
+        >
+          <div className="story-drawer-inner">
+            <div className="story-drawer-header">
+              <div className="story-brand-lockup is-compact-drawer">
+                <p className="eyebrow">Asset Discovery</p>
+                <strong className="story-brand">
+                  AI-guided discovery with visible reasoning.
+                </strong>
+              </div>
+              <span className="story-status">{sessionLabel}</span>
+            </div>
+
+            <nav className="story-drawer-nav" aria-label="Story sections">
+              {storyNavigationLinks.map((link) => (
+                <a
+                  key={link.href}
+                  className="story-drawer-link"
+                  href={link.href}
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  <span>{link.label}</span>
+                </a>
+              ))}
+            </nav>
+
+            <div className="story-drawer-group">
+              <p className="eyebrow">Open Source Repositories</p>
+              <div className="story-drawer-repos">
+                {storyRepositories.map((repository) => (
+                  <a
+                    key={repository.name}
+                    className="story-drawer-repo-link"
+                    href={repository.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <div className="story-drawer-repo-header">
+                      <span className="story-drawer-repo-surface">
+                        {repository.label}
+                      </span>
+                      <GitHubMarkIcon />
+                    </div>
+                    <strong>{repository.name}</strong>
+                    <p>{repository.license}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </SurfaceDrawerOverlay>
+      ) : null}
+
       <section className="story-hero">
         <div className="story-hero-copy">
-          <p className="eyebrow">Demo Narrative</p>
           <h1>Asset discovery should expand coverage without asking the team to trust a black box.</h1>
           <p className="story-summary">
-            This demo combines compact seed input, AI-judged pivots, scheduler-managed
-            frontier expansion, and traceable outcomes in one product surface. The
-            goal is not to find more assets at any cost. The goal is to make broader
-            discovery easier to trust, discuss, and operationalize.
+            The demo shows a discovery loop that can widen coverage without
+            hiding uncertainty. Recommendation quality, review state, and trace
+            context stay visible as the run expands.
           </p>
           <div className="story-hero-actions">
             <button
@@ -276,115 +272,134 @@ export function PresentationSite({
             >
               {primaryActionLabel}
             </button>
-            <a className="ghost-button" href="#walkthrough">
-              See The Demo Flow
+            <a className="ghost-button" href="#promise">
+              See The Evidence
             </a>
           </div>
-          <ul className="story-proof-list">
-            <li>AI-judged pivots instead of silent heuristic promotion</li>
-            <li>Frontier-based follow-up waves instead of uncontrolled recursion</li>
-            <li>Explicit ownership and trace context instead of opaque output</li>
-          </ul>
         </div>
 
-        <div className="story-hero-visual" aria-label="Presentation preview">
-          <article className="story-preview story-preview-overview">
-            <p className="eyebrow">Run Overview</p>
-            <h2>One workspace for coverage, judgment, and evidence.</h2>
-            <div className="story-preview-stats">
-              <span>Wave-aware scheduling</span>
-              <span>Judge accepted / discarded</span>
-              <span>Manual or autonomous execution</span>
-              <span>Export-ready outputs</span>
-            </div>
-          </article>
-          <article className="story-preview story-preview-pivot">
-            <p className="eyebrow">Pivot Review</p>
-            <strong>example-app.com</strong>
-            <p>
-              Brand overlap and matching page references make this a strong
-              candidate for follow-up collection.
-            </p>
-            <div className="story-preview-actions">
-              <span className="story-pill story-pill-accept">Accept</span>
-              <span className="story-pill story-pill-reject">Reject</span>
-              <span className="story-pill">Confidence 0.94</span>
-            </div>
-          </article>
-          <article className="story-preview story-preview-trace">
-            <p className="eyebrow">Trace Explorer</p>
-            <strong>Why is this asset here?</strong>
-            <ul>
-              <li>Contributors and seed context remain visible</li>
-              <li>Discovery relations and enrichment stay inspectable</li>
-              <li>Questionable assets can be explained instead of hidden</li>
-            </ul>
-          </article>
+        <div className="story-hero-montage">
+          <StoryCropFigure
+            crop={cropFor("run-overview")}
+            className="is-overview"
+            tone="ink"
+            captionMode="hidden"
+          >
+            <StoryRunOverviewMock />
+          </StoryCropFigure>
         </div>
       </section>
 
-      <section className="story-section" id="problem">
+      <section className="story-section story-problem-section" id="problem">
+        <div className="story-problem-layout">
+          <div className="story-problem-intro">
+            <p className="eyebrow">Problem</p>
+            <h2>Coverage gets easier to debate when the product keeps the reasoning close to the result.</h2>
+            <p>
+              The hard part is not only collecting more potential assets. It is
+              making the expanding result set legible enough that the team can
+              decide what deserves trust and follow-up.
+            </p>
+          </div>
+          <div className="story-problem-list">
+            {storyProblemPoints.map((point) => (
+              <article key={point.title} className="story-problem-card">
+                <h3>{point.title}</h3>
+                <p>{point.copy}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="story-section story-evidence-section" id="promise">
         <div className="story-section-header">
-          <p className="eyebrow">Problem</p>
-          <h2>Asset discovery becomes less useful when scale outruns trust.</h2>
+          <p className="eyebrow">Evidence</p>
+          <h2>What becomes visible when discovery has to justify itself.</h2>
           <p>
-            The interesting question is not whether a pipeline can collect more
-            data. It is whether the team can defend why the results deserve
-            attention.
+            The goal here is not to declare a product direction in the abstract.
+            It is to show what the workflow starts revealing once review,
+            judgment, and trace context stay inside the same surface.
           </p>
         </div>
-        <div className="story-grid story-grid-three">
-          {problemCards.map((card) => (
-            <article key={card.title} className="story-card">
-              <h3>{card.title}</h3>
-              <p>{card.copy}</p>
-            </article>
-          ))}
+        <div className="story-observation-stack">
+          {storyObservationBlocks.map((block) => {
+            const crop = cropFor(block.crop);
+            let surface: ReactNode;
+
+            if (block.crop === "pivot-review") {
+              surface = (
+                <StoryCropFigure
+                  crop={crop}
+                  interactive
+                  className="is-proof-panel"
+                  captionMode="label-only"
+                >
+                  <StoryPivotsViewMock />
+                </StoryCropFigure>
+              );
+            } else if (block.crop === "judge-analysis") {
+              surface = (
+                <StoryCropFigure
+                  crop={crop}
+                  className="is-proof-panel"
+                  captionMode="label-only"
+                >
+                  <StoryJudgeAnalysisMock />
+                </StoryCropFigure>
+              );
+            } else {
+              surface = (
+                <StoryCropFigure
+                  crop={crop}
+                  interactive
+                  className="is-proof-panel"
+                  captionMode="label-only"
+                >
+                  <StoryTraceExplorerMock />
+                </StoryCropFigure>
+              );
+            }
+
+            return (
+              <StoryProofStage
+                key={block.id}
+                eyebrow={block.eyebrow}
+                title={block.title}
+                copy={block.copy}
+                side={block.side}
+              >
+                {surface}
+              </StoryProofStage>
+            );
+          })}
         </div>
       </section>
 
-      <section className="story-section" id="promise">
-        <div className="story-section-header">
-          <p className="eyebrow">Product Promise</p>
-          <h2>Three ideas turn the demo from a collector bundle into a product direction.</h2>
-        </div>
-        <div className="story-grid story-grid-three">
-          {promiseCards.map((card) => (
-            <article key={card.title} className="story-card story-card-accent">
-              <p className="eyebrow">{card.eyebrow}</p>
-              <h3>{card.title}</h3>
-              <p>{card.copy}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="story-section" id="signals">
+      <section className="story-section story-capability-section" id="signals">
         <div className="story-section-header">
           <p className="eyebrow">Current Demo Scope</p>
-          <h2>The presentation stays grounded in what the repositories already do.</h2>
+          <h2>The current repositories already cover the discovery loop, the review loop, and the delivery loop.</h2>
+          <p>
+            Collection, review, traceability, and export delivery already land
+            in the same working surface for this demo scope.
+          </p>
         </div>
-        <div className="story-grid story-grid-three">
-          {signalCards.map((card) => (
-            <article key={card.title} className="story-card story-card-ink">
-              <h3>{card.title}</h3>
-              <ul className="story-list">
-                {card.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </article>
+        <div className="story-capability-grid">
+          {storyCapabilityGroups.map((group) => (
+            <StoryCapabilityBand key={group.title} group={group} />
           ))}
         </div>
       </section>
 
-      <section className="story-section" id="walkthrough">
+      <section className="story-section story-walkthrough-section" id="walkthrough">
         <div className="story-section-header">
           <p className="eyebrow">Live Walkthrough</p>
-          <h2>The demo flow is designed to sell the product through evidence, not theater.</h2>
+          <h2>The demo flow leads with proof surfaces first, then expands into the underlying workflow.</h2>
           <p>
-            Manual mode leads because it proves the system can recommend strongly
-            without pretending every decision should be automatic.
+            Manual mode leads because it shows recommendation quality without
+            asking the audience to trust automation before they have seen the
+            reasoning.
           </p>
         </div>
         <ol className="story-timeline">
@@ -400,31 +415,20 @@ export function PresentationSite({
         </ol>
       </section>
 
-      <section className="story-section" id="architecture">
-        <div className="story-section-header">
+      <section className="story-architecture-band" id="architecture">
+        <div className="story-architecture-copy">
           <p className="eyebrow">Technical Proof</p>
-          <h2>The architecture supports the product story instead of competing with it.</h2>
+          <h2>The architecture stays disciplined so the product can expand without feeling chaotic.</h2>
           <p>
-            The backend stays rooted in a scheduler-managed DAG, canonical assets,
-            and bounded reconsideration. That gives the team room to debate
-            alternatives without losing implementation discipline.
+            This is the supporting argument after the product story lands: new
+            seeds go back to the scheduler, the pipeline remains acyclic, and
+            ambiguity can be revisited without letting the system recurse
+            blindly.
           </p>
         </div>
-        <div className="story-grid story-grid-three">
-          {architecturePoints.map((point) => (
-            <article key={point.title} className="story-card">
-              <h3>{point.title}</h3>
-              <p>{point.copy}</p>
-            </article>
-          ))}
-        </div>
-        <div className="story-callout">
-          <strong>Supporting technical artifact</strong>
-          <p>
-            The sibling <code>asset-discovery</code> project already includes a
-            DAG visualization that explains the scheduler, collection waves, and
-            bounded frontier release. Use it after the live product flow lands.
-          </p>
+        <div className="story-architecture-visual">
+          <StoryArchitectureDiagram />
+          <StoryArchitecturePrinciples />
         </div>
       </section>
 
@@ -433,8 +437,8 @@ export function PresentationSite({
           <p className="eyebrow">Open Source Repositories</p>
           <h2>The demo is split into frontend and backend repositories you can inspect directly.</h2>
           <p>
-            Both repositories now carry MIT licenses and point to the actual
-            frontend workspace and Go discovery engine shown in the demo.
+            Both repositories carry MIT licenses and point to the actual
+            workspace and Go engine used throughout the demo.
           </p>
         </div>
         <div className="story-grid story-grid-two">
@@ -466,9 +470,9 @@ export function PresentationSite({
           <p className="eyebrow">Closing Claim</p>
           <h2>Comprehensiveness matters more when the reasoning is visible.</h2>
           <p>
-            The point of the demo is not to argue that one implementation is final.
-            It is to show a higher standard for how discovery products can balance
-            ambition, rigor, and trust.
+            The landing page is meant to make that felt before the live demo
+            begins: the system grows scope, but it also keeps the supporting
+            rationale close enough to inspect.
           </p>
         </div>
         <div className="story-hero-actions">
@@ -486,4 +490,10 @@ export function PresentationSite({
       </section>
     </main>
   );
+}
+
+function isCompactStoryViewport(): boolean {
+  return typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 1100px)").matches
+    : false;
 }

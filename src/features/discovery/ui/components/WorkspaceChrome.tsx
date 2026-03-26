@@ -1,4 +1,6 @@
 import type { MutableRefObject, ReactNode } from "react";
+import { SurfaceDrawerOverlay } from "../../../../app/SurfaceDrawerOverlay";
+import { SurfaceDrawerToggleButton } from "../../../../app/SurfaceDrawerToggleButton";
 import { SurfaceTopbar } from "../../../../app/SurfaceTopbar";
 import { formatDate, formatStatus, sessionInitials, sessionLabel } from "../formatters";
 import type {
@@ -8,8 +10,6 @@ import type {
 } from "../../core/types";
 import {
   ChevronDownIcon,
-  CloseIcon,
-  DrawerIcon,
   PlusIcon,
   ViewIcon,
 } from "./common";
@@ -80,6 +80,80 @@ export function WorkspaceChrome({
   children,
 }: WorkspaceChromeProps) {
   const collapsedDrawer = !expandedDrawer;
+  const drawerContent = (
+    <div className="drawer-inner">
+      {expandedDrawer ? (
+        <div className="drawer-header">
+          <div className="drawer-brand">
+            <div>
+              <p className="eyebrow">Asset Discovery</p>
+              <h2>Discovery Console</h2>
+              <p className="drawer-copy">
+                Runs, traces, pivots, and the live asset table stay in one
+                shell.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        className={expandedDrawer ? "hero-button drawer-cta" : "rail-action"}
+        aria-label="New Run"
+        data-tooltip={collapsedDrawer ? "New Run" : undefined}
+        data-tooltip-placement={collapsedDrawer ? "right" : undefined}
+        onClick={onOpenCreateModal}
+      >
+        {expandedDrawer ? (
+          <>
+            <PlusIcon />
+            <span>New Run</span>
+          </>
+        ) : (
+          <PlusIcon />
+        )}
+      </button>
+
+      <nav className="drawer-nav" aria-label="Workspace views">
+        {viewItems.map((item) => (
+          <button
+            key={item.view}
+            type="button"
+            className={`drawer-link ${activeView === item.view ? "is-active" : ""}`}
+            aria-label={`${item.label} ${item.count}`}
+            data-tooltip={collapsedDrawer ? item.label : undefined}
+            data-tooltip-placement={collapsedDrawer ? "right" : undefined}
+            onClick={() => onSelectView(item.view)}
+            disabled={!selectedRun}
+          >
+            <span className="drawer-link-icon">
+              <ViewIcon view={item.view} />
+            </span>
+            {expandedDrawer ? (
+              <span className="drawer-link-label">{item.label}</span>
+            ) : null}
+            {expandedDrawer ? (
+              <strong className="drawer-link-count">{item.count}</strong>
+            ) : null}
+          </button>
+        ))}
+      </nav>
+
+      {!compactViewport ? (
+        <div className="drawer-footer">
+          <button
+            type="button"
+            className="drawer-footer-toggle"
+            aria-label={drawerToggleLabel}
+            onClick={onDrawerToggle}
+          >
+            <SurfaceDrawerHandleIcon />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
@@ -88,14 +162,11 @@ export function WorkspaceChrome({
         start={
           <div className="topbar-left">
             {compactViewport ? (
-              <button
-                type="button"
-                className="topbar-drawer-toggle"
-                aria-label={drawerToggleLabel}
-                onClick={onDrawerToggle}
-              >
-                {drawerOpen ? <CloseIcon /> : <DrawerIcon />}
-              </button>
+              <SurfaceDrawerToggleButton
+                open={drawerOpen}
+                label={drawerToggleLabel}
+                onToggle={onDrawerToggle}
+              />
             ) : null}
             <div className="run-selector-shell" ref={runMenuRef}>
               <button
@@ -185,92 +256,38 @@ export function WorkspaceChrome({
         }
       />
 
-      <div
-        className={`drawer-scrim ${drawerOpen ? "is-open" : ""}`}
-        onClick={onCloseDrawer}
-      />
+      {compactViewport ? (
+        <SurfaceDrawerOverlay
+          open={drawerOpen}
+          onClose={onCloseDrawer}
+          ariaLabel="Workspace navigation"
+          scrimClassName="drawer-scrim"
+          drawerClassName="app-drawer is-expanded"
+        >
+          {drawerContent}
+        </SurfaceDrawerOverlay>
+      ) : null}
 
       <div className="live-body">
-        <aside
-          className={`app-drawer ${expandedDrawer ? "is-expanded" : "is-collapsed"} ${drawerOpen ? "is-open" : ""}`}
-          aria-label="Workspace navigation"
-        >
-          <div className="drawer-inner">
-            {expandedDrawer ? (
-              <div className="drawer-header">
-                <div className="drawer-brand">
-                  <div>
-                    <p className="eyebrow">Asset Discovery</p>
-                    <h2>Discovery Console</h2>
-                    <p className="drawer-copy">
-                      Runs, traces, pivots, and the live asset table stay in one
-                      shell.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              className={expandedDrawer ? "hero-button drawer-cta" : "rail-action"}
-              aria-label="New Run"
-              data-tooltip={collapsedDrawer ? "New Run" : undefined}
-              data-tooltip-placement={collapsedDrawer ? "right" : undefined}
-              onClick={onOpenCreateModal}
-            >
-              {expandedDrawer ? (
-                <>
-                  <PlusIcon />
-                  <span>New Run</span>
-                </>
-              ) : (
-                <PlusIcon />
-              )}
-            </button>
-
-            <nav className="drawer-nav" aria-label="Workspace views">
-              {viewItems.map((item) => (
-                <button
-                  key={item.view}
-                  type="button"
-                  className={`drawer-link ${activeView === item.view ? "is-active" : ""}`}
-                  aria-label={`${item.label} ${item.count}`}
-                  data-tooltip={collapsedDrawer ? item.label : undefined}
-                  data-tooltip-placement={collapsedDrawer ? "right" : undefined}
-                  onClick={() => onSelectView(item.view)}
-                  disabled={!selectedRun}
-                >
-                  <span className="drawer-link-icon">
-                    <ViewIcon view={item.view} />
-                  </span>
-                  {expandedDrawer ? (
-                    <span className="drawer-link-label">{item.label}</span>
-                  ) : null}
-                  {expandedDrawer ? (
-                    <strong className="drawer-link-count">{item.count}</strong>
-                  ) : null}
-                </button>
-              ))}
-            </nav>
-
-            {!compactViewport ? (
-              <div className="drawer-footer">
-                <button
-                  type="button"
-                  className="drawer-footer-toggle"
-                  aria-label={drawerToggleLabel}
-                  onClick={onDrawerToggle}
-                >
-                  <DrawerIcon />
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </aside>
+        {!compactViewport ? (
+          <aside
+            className={`app-drawer ${expandedDrawer ? "is-expanded" : "is-collapsed"}`}
+            aria-label="Workspace navigation"
+          >
+            {drawerContent}
+          </aside>
+        ) : null}
 
         <section className="live-main">{children}</section>
       </div>
     </>
+  );
+}
+
+function SurfaceDrawerHandleIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M3 5h14M3 10h14M3 15h14" />
+    </svg>
   );
 }

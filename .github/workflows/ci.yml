@@ -6,6 +6,19 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+
+env:
+  VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+  VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+  VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+  VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+  VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+  VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+  VITE_FIREBASE_EXPORTS_BUCKET: ${{ vars.VITE_FIREBASE_EXPORTS_BUCKET }}
+  VITE_ASSET_DISCOVERY_API_BASE_URL: ${{ vars.VITE_ASSET_DISCOVERY_API_BASE_URL || '' }}
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -26,3 +39,39 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: production
+    concurrency:
+      group: asset-discovery-web-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_PRODUCTION }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Deploy Firebase Hosting and rules
+        run: >
+          npx -y firebase-tools@latest deploy
+          --project "${{ vars.FIREBASE_PROJECT_ID }}"
+          --only firestore,storage,hosting

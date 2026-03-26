@@ -27,6 +27,20 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "asset-discovery-api",
+          "region": "southamerica-east1"
+        }
+      },
+      {
+        "source": "/healthz",
+        "run": {
+          "serviceId": "asset-discovery-api",
+          "region": "southamerica-east1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

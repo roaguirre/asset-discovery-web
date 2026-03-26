@@ -5,19 +5,22 @@ export type SurfaceTopbarProps = {
   middle?: ReactNode;
   end?: ReactNode;
   className?: string;
+  innerClassName?: string;
   sticky?: boolean;
 };
 
 /**
- * SurfaceTopbar owns the shared outer chrome for top-level app surfaces.
- * Story and workspace views pass their own controls into the slots so layout
- * can be reused without coupling unrelated navigation or menu behavior.
+ * SurfaceTopbar owns the shared outer chrome for top-level app surfaces while
+ * leaving each surface responsible for its own controls and state. The outer
+ * header provides the backdrop and positioning; the inner row carries the
+ * aligned content frame for the current surface.
  */
 export function SurfaceTopbar({
   start,
   middle,
   end,
   className,
+  innerClassName,
   sticky = false,
 }: SurfaceTopbarProps) {
   const classes = [
@@ -27,12 +30,17 @@ export function SurfaceTopbar({
   ]
     .filter(Boolean)
     .join(" ");
+  const innerClasses = ["surface-topbar-inner", innerClassName ?? null]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <header className={classes}>
-      <div className="surface-topbar-start">{start}</div>
-      <div className="surface-topbar-middle">{middle ?? null}</div>
-      <div className="surface-topbar-end">{end ?? null}</div>
+      <div className={innerClasses}>
+        <div className="surface-topbar-start">{start}</div>
+        <div className="surface-topbar-middle">{middle ?? null}</div>
+        <div className="surface-topbar-end">{end ?? null}</div>
+      </div>
     </header>
   );
 }

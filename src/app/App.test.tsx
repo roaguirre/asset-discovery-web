@@ -261,7 +261,7 @@ describe("App", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      within(storyTopbar as HTMLElement).getByRole("link", { name: "Promise" }),
+      within(storyTopbar as HTMLElement).getByRole("link", { name: "Evidence" }),
     ).toBeVisible();
     expect(
       within(storyTopbar as HTMLElement).getByRole("link", {
@@ -280,7 +280,7 @@ describe("App", () => {
       "https://github.com/roaguirre/asset-discovery",
     );
     expect(
-      within(storyTopbar as HTMLElement).getByText("Public story mode"),
+      within(storyTopbar as HTMLElement).getByText("Public story"),
     ).toBeInTheDocument();
     expect(
       within(storyTopbar as HTMLElement).getByRole("button", {
@@ -292,6 +292,25 @@ describe("App", () => {
         "Asset discovery should expand coverage without asking the team to trust a black box.",
       ),
     ).toBeInTheDocument();
+    const storyHero = document.querySelector(".story-hero");
+    expect(storyHero).not.toBeNull();
+    expect(
+      screen.getByText(
+        "What becomes visible when discovery has to justify itself.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(storyHero as HTMLElement).getByLabelText("Run Overview mock view"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Trace Explorer mock view"),
+    ).toBeInTheDocument();
+    expect(
+      within(storyHero as HTMLElement).queryByText("Pivot Review"),
+    ).toBeNull();
+    expect(
+      within(storyHero as HTMLElement).queryByText("Trace Summary"),
+    ).toBeNull();
 
     await user.click(
       screen.getAllByRole("button", { name: "Sign In For Live Demo" })[0],
@@ -310,6 +329,54 @@ describe("App", () => {
 
     expect(deps.signInWithGoogle).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Discovery Console")).toBeInTheDocument();
+  });
+
+  it("collapses the story header on compact viewports and reveals navigation in a drawer", async () => {
+    mockMatchMedia(true);
+
+    const deps = new FakeLiveDeps({});
+    const user = userEvent.setup();
+
+    render(<App deps={deps} />);
+
+    const storyTopbar = document.querySelector(".story-topbar");
+    expect(storyTopbar).not.toBeNull();
+    expect(
+      within(storyTopbar as HTMLElement).getByRole("button", {
+        name: "Open navigation",
+      }),
+    ).toBeVisible();
+    expect(
+      within(storyTopbar as HTMLElement).getByRole("button", {
+        name: "Sign In For Live Demo",
+      }),
+    ).toBeVisible();
+    expect(
+      within(storyTopbar as HTMLElement).queryByRole("link", {
+        name: "Open frontend repository on GitHub",
+      }),
+    ).toBeNull();
+
+    expect(screen.queryByLabelText("Story navigation")).toBeNull();
+
+    await user.click(
+      within(storyTopbar as HTMLElement).getByRole("button", {
+        name: "Open navigation",
+      }),
+    );
+
+    const drawer = screen.getByLabelText("Story navigation");
+    expect(
+      within(drawer).getByRole("link", { name: "Evidence" }),
+    ).toHaveAttribute("href", "#promise");
+    expect(
+      within(drawer).getByRole("link", {
+        name: /roaguirre\/asset-discovery-web/i,
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/roaguirre/asset-discovery-web",
+    );
   });
 
   it("holds the workspace sign-in gate until auth hydration completes", async () => {
@@ -356,7 +423,8 @@ describe("App", () => {
         name: /roaguirre\/asset-discovery(?!-web)/i,
       }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Selected Run")).not.toBeInTheDocument();
+    expect(document.querySelector(".workspace-topbar")).toBeNull();
+    expect(screen.queryByText("Discovery Console")).not.toBeInTheDocument();
   });
 
   it("blocks users outside the allowlist", () => {
@@ -900,8 +968,7 @@ describe("App", () => {
 
     render(<App deps={deps} />);
 
-    const drawer = screen.getByLabelText("Workspace navigation");
-    expect(drawer.className).not.toContain("is-open");
+    expect(screen.queryByLabelText("Workspace navigation")).toBeNull();
     expect(
       screen.getByRole("button", { name: "Open navigation" }),
     ).toBeInTheDocument();
@@ -913,7 +980,7 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
-    expect(drawer.className).toContain("is-open");
+    expect(screen.getByLabelText("Workspace navigation")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Close navigation" }),
     ).toBeInTheDocument();

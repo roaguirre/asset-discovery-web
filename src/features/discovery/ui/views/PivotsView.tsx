@@ -14,6 +14,7 @@ type PivotsViewProps = {
   pendingPivots: LivePivotRecord[];
   auditPivots: LivePivotRecord[];
   judgeSummary: LiveJudgeSummary;
+  showTabs?: boolean;
   onSelectTab: (tab: PivotPanelTab) => void;
   onSelectPivot: (pivotID: string) => void;
   onPivotDecision: (
@@ -33,6 +34,7 @@ export function PivotsView({
   pendingPivots,
   auditPivots,
   judgeSummary,
+  showTabs = true,
   onSelectTab,
   onSelectPivot,
   onPivotDecision,
@@ -53,32 +55,34 @@ export function PivotsView({
               : "Grouped judge outcomes stay visible alongside the review workflow."}
           </p>
         </div>
-        <div
-          className="asset-tabs pivot-view-tabs"
-          role="tablist"
-          aria-label="Pivot analysis views"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={pivotPanelTab === "review"}
-            className={`asset-tab ${pivotPanelTab === "review" ? "is-active" : ""}`}
-            onClick={() => onSelectTab("review")}
+        {showTabs ? (
+          <div
+            className="asset-tabs pivot-view-tabs"
+            role="tablist"
+            aria-label="Pivot analysis views"
           >
-            <span>Review</span>
-            <strong>{pendingPivots.length + auditPivots.length}</strong>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={pivotPanelTab === "judge"}
-            className={`asset-tab ${pivotPanelTab === "judge" ? "is-active" : ""}`}
-            onClick={() => onSelectTab("judge")}
-          >
-            <span>Judge Analysis</span>
-            <strong>{judgeSummary.evaluation_count}</strong>
-          </button>
-        </div>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={pivotPanelTab === "review"}
+              className={`asset-tab ${pivotPanelTab === "review" ? "is-active" : ""}`}
+              onClick={() => onSelectTab("review")}
+            >
+              <span>Review</span>
+              <strong>{pendingPivots.length + auditPivots.length}</strong>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={pivotPanelTab === "judge"}
+              className={`asset-tab ${pivotPanelTab === "judge" ? "is-active" : ""}`}
+              onClick={() => onSelectTab("judge")}
+            >
+              <span>Judge Analysis</span>
+              <strong>{judgeSummary.evaluation_count}</strong>
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {pivotPanelTab === "review" ? (
@@ -90,52 +94,14 @@ export function PivotsView({
             </div>
             <div className="pivot-list">
               {pendingPivots.map((pivot) => (
-                <article
+                <PivotReviewCard
                   key={pivot.id}
-                  className={`pivot-card ${selectedPivotID === pivot.id ? "is-selected" : ""}`}
-                  onClick={() => onSelectPivot(pivot.id)}
-                >
-                  <div className="pivot-copy">
-                    <strong>{pivot.root}</strong>
-                    <p>
-                      {pivot.recommendation_reason ||
-                        "AI recommended this pivot without an explicit explanation."}
-                    </p>
-                    <div className="pivot-meta">
-                      <span>{pivot.collector || "judge"}</span>
-                      <span>
-                        {pivot.seed_label ||
-                          pivot.seed_domains?.join(", ") ||
-                          "Seed context pending"}
-                      </span>
-                      <span>{formatScore(pivot.recommendation_score)}</span>
-                    </div>
-                  </div>
-                  <div className="pivot-actions">
-                    <button
-                      type="button"
-                      className="hero-button compact"
-                      disabled={busyAction === `accepted:${pivot.id}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onPivotDecision(pivot, "accepted");
-                      }}
-                    >
-                      Accept
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button compact"
-                      disabled={busyAction === `rejected:${pivot.id}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onPivotDecision(pivot, "rejected");
-                      }}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </article>
+                  pivot={pivot}
+                  selected={selectedPivotID === pivot.id}
+                  busyAction={busyAction}
+                  onSelect={() => onSelectPivot(pivot.id)}
+                  onPivotDecision={onPivotDecision}
+                />
               ))}
               {pendingPivots.length === 0 ? (
                 <p className="empty-copy">No pivots need review right now.</p>
@@ -150,23 +116,7 @@ export function PivotsView({
             </div>
             <div className="audit-list">
               {auditPivots.map((pivot) => (
-                <article key={pivot.id} className="audit-item">
-                  <div className="audit-header">
-                    <strong>{pivot.root}</strong>
-                    <span className={`status-pill status-${pivot.status}`}>
-                      {formatStatus(pivot.status)}
-                    </span>
-                  </div>
-                  <p>
-                    {pivot.recommendation_reason ||
-                      "No explicit rationale was stored for this recommendation."}
-                  </p>
-                  <div className="pivot-meta">
-                    <span>{pivot.collector || "judge"}</span>
-                    <span>{formatDate(pivot.updated_at)}</span>
-                    <span>{formatScore(pivot.recommendation_score)}</span>
-                  </div>
-                </article>
+                <PivotAuditItem key={pivot.id} pivot={pivot} />
               ))}
               {auditPivots.length === 0 ? (
                 <p className="empty-copy">
@@ -180,5 +130,102 @@ export function PivotsView({
         <JudgeAnalysisPanel judgeSummary={judgeSummary} />
       )}
     </section>
+  );
+}
+
+type PivotReviewCardProps = {
+  pivot: LivePivotRecord;
+  selected: boolean;
+  busyAction: string;
+  onSelect: () => void;
+  onPivotDecision: (
+    pivot: LivePivotRecord,
+    decision: "accepted" | "rejected",
+  ) => void;
+};
+
+/**
+ * PivotReviewCard renders one actionable pivot recommendation so review UIs can
+ * reuse the same evidence, metadata, and decision controls.
+ */
+export function PivotReviewCard({
+  pivot,
+  selected,
+  busyAction,
+  onSelect,
+  onPivotDecision,
+}: PivotReviewCardProps) {
+  return (
+    <article
+      className={`pivot-card ${selected ? "is-selected" : ""}`}
+      onClick={onSelect}
+    >
+      <div className="pivot-copy">
+        <strong>{pivot.root}</strong>
+        <p>
+          {pivot.recommendation_reason ||
+            "AI recommended this pivot without an explicit explanation."}
+        </p>
+        <div className="pivot-meta">
+          <span>{pivot.collector || "judge"}</span>
+          <span>
+            {pivot.seed_label ||
+              pivot.seed_domains?.join(", ") ||
+              "Seed context pending"}
+          </span>
+          <span>{formatScore(pivot.recommendation_score)}</span>
+        </div>
+      </div>
+      <div className="pivot-actions">
+        <button
+          type="button"
+          className="hero-button compact"
+          disabled={busyAction === `accepted:${pivot.id}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onPivotDecision(pivot, "accepted");
+          }}
+        >
+          Accept
+        </button>
+        <button
+          type="button"
+          className="ghost-button compact"
+          disabled={busyAction === `rejected:${pivot.id}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onPivotDecision(pivot, "rejected");
+          }}
+        >
+          Reject
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * PivotAuditItem renders the resolved recommendation state so audit surfaces
+ * can stay consistent with the main pivots view.
+ */
+export function PivotAuditItem({ pivot }: { pivot: LivePivotRecord }) {
+  return (
+    <article className="audit-item">
+      <div className="audit-header">
+        <strong>{pivot.root}</strong>
+        <span className={`status-pill status-${pivot.status}`}>
+          {formatStatus(pivot.status)}
+        </span>
+      </div>
+      <p>
+        {pivot.recommendation_reason ||
+          "No explicit rationale was stored for this recommendation."}
+      </p>
+      <div className="pivot-meta">
+        <span>{pivot.collector || "judge"}</span>
+        <span>{formatDate(pivot.updated_at)}</span>
+        <span>{formatScore(pivot.recommendation_score)}</span>
+      </div>
+    </article>
   );
 }

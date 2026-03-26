@@ -32,51 +32,11 @@ export function TraceExplorer({
   onOpenTrace,
 }: TraceExplorerProps) {
   const children = buildTraceChildren(trace);
-  const summaryPills = buildTraceSummaryPills(trace, asset);
-  const summaryStats = buildTraceSummaryStats(trace);
-  const sections = trace?.sections ?? [];
   const related = trace?.related ?? [];
 
   return (
     <div className="trace-explorer">
-      <article className="trace-card trace-summary-card">
-        <p className="eyebrow">Trace Summary</p>
-        <h3>{trace?.identifier || asset?.identifier || "Unknown asset"}</h3>
-        <div className="badge-row">
-          {summaryPills.map((pill) => (
-            <span key={pill} className="pill pill-subtle">
-              {pill}
-            </span>
-          ))}
-        </div>
-        {summaryStats.length > 0 ? (
-          <div className="trace-stat-row">
-            {summaryStats.map((stat) => (
-              <span key={stat} className="pill">
-                {stat}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <section className="trace-section-stack">
-          {sections.length > 0 ? (
-            sections.slice(0, 4).map((section) => (
-              <article key={section.title} className="trace-section-card">
-                <strong>{section.title}</strong>
-                <ul>
-                  {(section.items ?? []).map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </article>
-            ))
-          ) : (
-            <p className="empty-copy">
-              Trace sections will appear here as checkpoint snapshots refresh.
-            </p>
-          )}
-        </section>
-      </article>
+      <TraceSummaryCard trace={trace} asset={asset} />
 
       <div className="trace-workspace-live">
         <aside className="trace-tree-shell-live">
@@ -147,6 +107,63 @@ export function TraceExplorer({
         )}
       </article>
     </div>
+  );
+}
+
+/**
+ * TraceSummaryCard renders the headline trace context so other surfaces can
+ * reuse the summary without coupling to the full explorer layout.
+ */
+export function TraceSummaryCard({
+  trace,
+  asset,
+}: {
+  trace: LiveTrace | null;
+  asset: LiveAssetRow | null;
+}) {
+  const summaryPills = buildTraceSummaryPills(trace, asset);
+  const summaryStats = buildTraceSummaryStats(trace);
+  const sections = trace?.sections ?? [];
+
+  return (
+    <article className="trace-card trace-summary-card">
+      <p className="eyebrow">Trace Summary</p>
+      <h3>{trace?.identifier || asset?.identifier || "Unknown asset"}</h3>
+      <div className="badge-row">
+        {summaryPills.map((pill) => (
+          <span key={pill} className="pill pill-subtle">
+            {pill}
+          </span>
+        ))}
+      </div>
+      {summaryStats.length > 0 ? (
+        <div className="trace-stat-row">
+          {summaryStats.map((stat) => (
+            <span key={stat} className="pill">
+              {stat}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <section className="trace-section-stack">
+        {sections.length > 0 ? (
+          sections.slice(0, 4).map((section) => (
+            <article key={section.title} className="trace-section-card">
+              <strong>{section.title}</strong>
+              <ul>
+                {(section.items ?? []).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          ))
+        ) : (
+          <p className="empty-copy">
+            Trace sections will appear here as checkpoint snapshots refresh.
+          </p>
+        )}
+      </section>
+    </article>
   );
 }
 
