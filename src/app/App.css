@@ -794,12 +794,16 @@ body {
 .pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 12px;
   border-radius: 999px;
   font-size: 0.82rem;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.58);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: center;
 }
 
 .pill {
@@ -872,6 +876,7 @@ body {
 
 .panel-heading {
   margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .run-overview .stat-grid {
