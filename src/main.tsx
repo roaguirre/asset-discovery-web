@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import LiveApp from "./live/LiveApp";
-import { buildFirebaseLiveDeps } from "./live/firebaseDeps";
+import App from "./app/App";
+import { buildFirebaseLiveDeps } from "./features/discovery/infra/firebaseDeps";
 
 const rootElement = document.getElementById("root");
 if (rootElement == null) {
@@ -9,4 +9,4 @@ if (rootElement == null) {
 }
 
 const root = createRoot(rootElement);
-root.render(<LiveApp deps={buildFirebaseLiveDeps()} />);
+root.render(<App deps={buildFirebaseLiveDeps()} />);

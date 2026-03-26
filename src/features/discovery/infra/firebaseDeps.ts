@@ -1,7 +1,7 @@
-import { initializeApp, getApps } from "firebase/app";
+import { getApps, initializeApp } from "firebase/app";
 import {
-  getAuth,
   GoogleAuthProvider,
+  getAuth,
   onAuthStateChanged,
   signInWithPopup,
   signOut,
@@ -21,8 +21,16 @@ import {
   getStorage,
   ref as storageRef,
 } from "firebase/storage";
-import type { LiveAppDeps } from "./deps";
 import type {
+  LiveAppDeps,
+  LiveAuthDeps,
+  LiveRunActionDeps,
+  LiveRunDataDeps,
+  LiveRunListDeps,
+} from "../ports";
+import { readExportsBucket, readFirebaseConfig, resolveLiveURL } from "./env";
+import type {
+  CreateRunPayload,
   LiveAssetRow,
   LiveAuthSession,
   LiveEventRecord,
@@ -30,9 +38,12 @@ import type {
   LivePivotRecord,
   LiveRunRecord,
   LiveTrace,
-} from "./types";
-import { readExportsBucket, resolveLiveURL, readFirebaseConfig } from "./env";
+} from "../core/types";
 
+/**
+ * buildFirebaseLiveDeps preserves the app's existing dependency seam while
+ * composing smaller Firebase-backed ports internally.
+ */
 export function buildFirebaseLiveDeps(): LiveAppDeps {
   const config = readFirebaseConfig();
   const exportsBucket = readExportsBucket();
@@ -43,7 +54,20 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
   const storage = getStorage(app, `gs://${exportsBucket}`);
   const provider = new GoogleAuthProvider();
   const downloadURLCache = new Map<string, Promise<string>>();
+  const authDeps = buildFirebaseAuthDeps(auth, provider);
 
+  return {
+    ...authDeps,
+    ...buildFirebaseRunListDeps(db),
+    ...buildFirebaseRunDataDeps(db, storage, downloadURLCache),
+    ...buildFirebaseRunActionDeps(authDeps.getIDToken),
+  };
+}
+
+function buildFirebaseAuthDeps(
+  auth: ReturnType<typeof getAuth>,
+  provider: GoogleAuthProvider,
+): LiveAuthDeps {
   return {
     subscribeAuth(onSession) {
       return onAuthStateChanged(auth, (user) => onSession(mapUser(user)));
@@ -60,6 +84,13 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
       }
       return auth.currentUser.getIdToken();
     },
+  };
+}
+
+function buildFirebaseRunListDeps(
+  db: ReturnType<typeof getFirestore>,
+): LiveRunListDeps {
+  return {
     subscribeRuns(ownerUID, onRuns) {
       const runQuery = query(
         collection(db, "runs"),
@@ -68,8 +99,8 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
       );
       return onSnapshot(runQuery, (snapshot) => {
         const runs = snapshot.docs
-          .map((doc) =>
-            normalizeRecord<LiveRunRecord>({ id: doc.id, ...doc.data() }),
+          .map((entry) =>
+            normalizeRecord<LiveRunRecord>({ id: entry.id, ...entry.data() }),
           )
           .sort((left, right) =>
             compareDates(right.updated_at, left.updated_at),
@@ -77,10 +108,19 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
         onRuns(runs);
       });
     },
+  };
+}
+
+function buildFirebaseRunDataDeps(
+  db: ReturnType<typeof getFirestore>,
+  storage: ReturnType<typeof getStorage>,
+  downloadURLCache: Map<string, Promise<string>>,
+): LiveRunDataDeps {
+  return {
     subscribeAssets(runID, onAssets) {
       return onSnapshot(collection(db, "runs", runID, "assets"), (snapshot) => {
         const assets = snapshot.docs
-          .map((doc) => normalizeRecord<LiveAssetRow>(doc.data()))
+          .map((entry) => normalizeRecord<LiveAssetRow>(entry.data()))
           .sort((left, right) =>
             compareDates(right.discovery_date, left.discovery_date),
           );
@@ -89,8 +129,8 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
     },
     subscribeTraces(runID, onTraces) {
       return onSnapshot(collection(db, "runs", runID, "traces"), (snapshot) => {
-        const traces = snapshot.docs.map((doc) =>
-          normalizeRecord<LiveTrace>(doc.data()),
+        const traces = snapshot.docs.map((entry) =>
+          normalizeRecord<LiveTrace>(entry.data()),
         );
         onTraces(traces);
       });
@@ -98,8 +138,11 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
     subscribePivots(runID, onPivots) {
       return onSnapshot(collection(db, "runs", runID, "pivots"), (snapshot) => {
         const pivots = snapshot.docs
-          .map((doc) =>
-            normalizeRecord<LivePivotRecord>({ id: doc.id, ...doc.data() }),
+          .map((entry) =>
+            normalizeRecord<LivePivotRecord>({
+              id: entry.id,
+              ...entry.data(),
+            }),
           )
           .sort((left, right) =>
             compareDates(right.updated_at, left.updated_at),
@@ -130,8 +173,8 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
         orderBy("created_at", "desc"),
       );
       return onSnapshot(eventQuery, (snapshot) => {
-        const events = snapshot.docs.map((doc) =>
-          normalizeRecord<LiveEventRecord>({ id: doc.id, ...doc.data() }),
+        const events = snapshot.docs.map((entry) =>
+          normalizeRecord<LiveEventRecord>({ id: entry.id, ...entry.data() }),
         );
         onEvents(events);
       });
@@ -155,8 +198,15 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
       downloadURLCache.set(trimmed, pending);
       return pending;
     },
-    async createRun(payload) {
-      const token = await this.getIDToken();
+  };
+}
+
+function buildFirebaseRunActionDeps(
+  getIDToken: LiveAuthDeps["getIDToken"],
+): LiveRunActionDeps {
+  return {
+    async createRun(payload: CreateRunPayload) {
+      const token = await getIDToken();
       const response = await fetch(resolveLiveURL("/api/runs"), {
         method: "POST",
         headers: {
@@ -168,7 +218,7 @@ export function buildFirebaseLiveDeps(): LiveAppDeps {
       return parseAPIResponse<LiveRunRecord>(response);
     },
     async decidePivot(runID, pivotID, decision) {
-      const token = await this.getIDToken();
+      const token = await getIDToken();
       const response = await fetch(
         resolveLiveURL(
           `/api/runs/${encodeURIComponent(runID)}/pivots/${encodeURIComponent(pivotID)}/decision`,
@@ -227,6 +277,10 @@ function compareDates(
   return Date.parse(left ?? "") - Date.parse(right ?? "");
 }
 
+/**
+ * parseAPIResponse converts the live API response body into JSON and prefers
+ * explicit API error messages over transport-level fallback text.
+ */
 export async function parseAPIResponse<T>(response: Response): Promise<T> {
   const rawBody = await response.text();
   const payload = parseResponseBody<T | { error?: string }>(rawBody);

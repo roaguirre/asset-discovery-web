@@ -8,8 +8,8 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import LiveApp from "./LiveApp";
-import type { LiveAppDeps, Unsubscribe } from "./deps";
+import App from "./App";
+import type { LiveAppDeps, Unsubscribe } from "../features/discovery/ports";
 import type {
   CreateRunPayload,
   LiveAssetRow,
@@ -19,7 +19,7 @@ import type {
   LivePivotRecord,
   LiveRunRecord,
   LiveTrace,
-} from "./types";
+} from "../features/discovery/core/types";
 
 class FakeLiveDeps implements LiveAppDeps {
   authSession: LiveAuthSession | null;
@@ -246,12 +246,12 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-describe("LiveApp", () => {
+describe("App", () => {
   it("renders the sign-in gate and invokes Google sign-in", async () => {
     const deps = new FakeLiveDeps({});
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     await user.click(
       screen.getByRole("button", { name: "Sign In With Google" }),
@@ -264,7 +264,7 @@ describe("LiveApp", () => {
   it("holds the sign-in gate until auth hydration completes", async () => {
     const deps = new FakeLiveDeps({ deferInitialAuth: true });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(screen.getByText("Preparing Workspace")).toBeInTheDocument();
     expect(
@@ -289,7 +289,7 @@ describe("LiveApp", () => {
       },
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(screen.getByText("Access Restricted")).toBeInTheDocument();
     expect(screen.getByText("outsider@example.com")).toBeInTheDocument();
@@ -305,7 +305,7 @@ describe("LiveApp", () => {
       deferInitialRuns: true,
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(screen.getByText("Preparing Workspace")).toBeInTheDocument();
     expect(
@@ -323,7 +323,7 @@ describe("LiveApp", () => {
       deferInitialRuns: true,
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     await act(async () => {
       deps.emitRuns([]);
@@ -345,7 +345,7 @@ describe("LiveApp", () => {
       deferInitialRuns: true,
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(screen.getByText("Preparing Workspace")).toBeInTheDocument();
 
@@ -377,7 +377,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     await user.click(screen.getByRole("button", { name: "New Run" }));
     expect(screen.getByRole("switch", { name: "✨ AI mode" })).toBeChecked();
@@ -452,7 +452,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(await screen.findByText("Activity Feed")).toBeInTheDocument();
     expect(
@@ -511,7 +511,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(await screen.findByRole("tab", { name: /IPs/i })).toHaveAttribute(
       "aria-selected",
@@ -609,7 +609,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     const dnsPill = await screen.findByText("dns_collector");
     expect(dnsPill).toHaveAttribute("data-tooltip");
@@ -695,7 +695,7 @@ describe("LiveApp", () => {
     windowOpen.mockReturnValue(popupWindow);
     vi.stubGlobal("open", windowOpen);
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(await screen.findByText("Seeds")).toBeInTheDocument();
     expect(screen.getByText("Enumerations")).toBeInTheDocument();
@@ -720,7 +720,7 @@ describe("LiveApp", () => {
       runs: [buildRun("run-running", { status: "running" })],
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(await screen.findByText("Preparing exports...")).toBeInTheDocument();
   });
@@ -735,7 +735,7 @@ describe("LiveApp", () => {
       runs: [buildRun("run-complete", { status: "completed" })],
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(
       await screen.findByText("Downloads unavailable"),
@@ -754,7 +754,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     const topbar = document.querySelector(".workspace-topbar");
     expect(topbar).not.toBeNull();
@@ -807,7 +807,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     const drawer = screen.getByLabelText("Workspace navigation");
     expect(drawer.className).not.toContain("is-open");
@@ -900,7 +900,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     await user.click(screen.getByRole("button", { name: /Pivots 1/i }));
     expect(await screen.findByRole("tab", { name: /Review/i })).toHaveAttribute(
@@ -948,7 +948,7 @@ describe("LiveApp", () => {
       },
     });
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(await screen.findByText("Trace Focus")).toBeInTheDocument();
     expect(
@@ -972,7 +972,7 @@ describe("LiveApp", () => {
     });
     const user = userEvent.setup();
 
-    render(<LiveApp deps={deps} />);
+    render(<App deps={deps} />);
 
     expect(screen.queryByText(/firebase/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/zerofox/i)).not.toBeInTheDocument();
