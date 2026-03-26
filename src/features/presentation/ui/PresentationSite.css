@@ -62,6 +62,7 @@
 .story-section,
 .story-final,
 .story-architecture-band {
+  box-sizing: border-box;
   width: min(var(--story-content-width), 100%);
 }
 
