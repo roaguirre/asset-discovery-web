@@ -57,7 +57,7 @@ describe("traceModel", () => {
     ]);
 
     expect(buildTraceSummaryPills(trace, asset)).toContain("Discovered via dns_collector");
-    expect(buildTraceSummaryPills(trace, asset)).toContain("Enum enum-1");
+    expect(buildTraceSummaryPills(trace, asset)).toContain("1 enumeration");
     expect(buildTraceSummaryStats(trace)).toEqual([
       "1 contributor",
       "1 relation",

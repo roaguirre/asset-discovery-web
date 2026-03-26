@@ -230,15 +230,6 @@ function TraceTreeBranch({
 }
 
 function TraceNodeDetailsCard({ node }: { node: TraceNode }) {
-  const meta = [
-    node.kind ? humanizeToken(node.kind) : "",
-    node.linked_asset_id ? `Asset ${node.linked_asset_id}` : "",
-    node.linked_observation_id
-      ? `Observation ${node.linked_observation_id}`
-      : "",
-    node.linked_relation_id ? `Relation ${node.linked_relation_id}` : "",
-  ].filter(Boolean);
-
   return (
     <div className="trace-node-detail-stack">
       <article className="trace-card">
@@ -246,13 +237,11 @@ function TraceNodeDetailsCard({ node }: { node: TraceNode }) {
         <p className="panel-copy">
           {node.subtitle || "No subtitle exported for this node."}
         </p>
-        <div className="badge-row">
-          {meta.map((value) => (
-            <span key={value} className="pill pill-subtle">
-              {value}
-            </span>
-          ))}
-        </div>
+        {node.kind ? (
+          <div className="badge-row">
+            <span className="pill pill-subtle">{humanizeToken(node.kind)}</span>
+          </div>
+        ) : null}
       </article>
       {(node.details ?? []).length > 0 ? (
         (node.details ?? []).map((section) => (

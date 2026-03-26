@@ -1359,6 +1359,7 @@ body {
   align-items: flex-start;
   padding: 14px 16px;
   border-radius: 16px;
+  border: 1px solid rgba(34, 25, 16, 0.08);
   background: rgba(255, 255, 255, 0.52);
   text-align: left;
 }

@@ -280,9 +280,6 @@ describe("App", () => {
       "https://github.com/roaguirre/asset-discovery",
     );
     expect(
-      within(storyTopbar as HTMLElement).getByText("Public story"),
-    ).toBeInTheDocument();
-    expect(
       within(storyTopbar as HTMLElement).getByRole("button", {
         name: "Sign In For Live Demo",
       }),

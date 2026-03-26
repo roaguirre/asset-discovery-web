@@ -68,7 +68,6 @@ function cropFor(key: StoryCrop["key"]) {
  * enters the signed-in console.
  */
 export function PresentationSite({
-  authHydrated,
   sessionActive,
   onOpenWorkspace,
   onSignInToWorkspace,
@@ -81,11 +80,6 @@ export function PresentationSite({
     ? "Open Live Workspace"
     : "Sign In For Live Demo";
   const primaryAction = sessionActive ? onOpenWorkspace : onSignInToWorkspace;
-  const sessionLabel = !authHydrated
-    ? "Checking session"
-    : sessionActive
-      ? "Live session"
-      : "Public story";
   const drawerToggleLabel = drawerOpen ? "Close navigation" : "Open navigation";
 
   useEffect(() => {
@@ -151,13 +145,13 @@ export function PresentationSite({
         }
         middle={
           compactViewport ? null : (
-          <nav className="story-nav" aria-label="Presentation sections">
-            {storyNavigationLinks.map((link) => (
-              <a key={link.href} href={link.href}>
-                {link.label}
-              </a>
-            ))}
-          </nav>
+            <nav className="story-nav" aria-label="Presentation sections">
+              {storyNavigationLinks.map((link) => (
+                <a key={link.href} href={link.href}>
+                  {link.label}
+                </a>
+              ))}
+            </nav>
           )
         }
         end={
@@ -185,7 +179,6 @@ export function PresentationSite({
                     </a>
                   ))}
                 </div>
-                <span className="story-status">{sessionLabel}</span>
               </>
             )}
             <button
@@ -215,7 +208,6 @@ export function PresentationSite({
                   AI-guided discovery with visible reasoning.
                 </strong>
               </div>
-              <span className="story-status">{sessionLabel}</span>
             </div>
 
             <nav className="story-drawer-nav" aria-label="Story sections">

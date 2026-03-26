@@ -158,26 +158,24 @@ export function buildTraceSummaryPills(
     pushSources("", trace?.source || asset?.source);
   }
 
-  const enumerationValues = uniqueContributorValues(
-    contributors,
-    "enumeration_id",
-  );
-  if (enumerationValues.length === 1) {
-    pills.push(`Enum ${enumerationValues[0]}`);
-  } else if (enumerationValues.length > 1) {
-    pills.push(`${enumerationValues.length} enumerations`);
-  } else if (trace?.enumeration_id || asset?.enumeration_id) {
-    pills.push(`Enum ${trace?.enumeration_id || asset?.enumeration_id}`);
-  }
+  const pushCountPill = (values: string[], hasFallback: boolean, singular: string) => {
+    if (values.length > 0) {
+      pills.push(`${values.length} ${singular}${values.length === 1 ? "" : "s"}`);
+    } else if (hasFallback) {
+      pills.push(`1 ${singular}`);
+    }
+  };
 
-  const seedValues = uniqueContributorValues(contributors, "seed_id");
-  if (seedValues.length === 1) {
-    pills.push(`Seed ${seedValues[0]}`);
-  } else if (seedValues.length > 1) {
-    pills.push(`${seedValues.length} seeds`);
-  } else if (trace?.seed_id || asset?.seed_id) {
-    pills.push(`Seed ${trace?.seed_id || asset?.seed_id}`);
-  }
+  pushCountPill(
+    uniqueContributorValues(contributors, "enumeration_id"),
+    !!(trace?.enumeration_id || asset?.enumeration_id),
+    "enumeration",
+  );
+  pushCountPill(
+    uniqueContributorValues(contributors, "seed_id"),
+    !!(trace?.seed_id || asset?.seed_id),
+    "seed",
+  );
 
   return pills.filter(Boolean);
 }
