@@ -145,6 +145,9 @@
 .story-brand-lockup.is-compact .story-brand {
   max-width: 11rem;
   font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .story-brand-lockup.is-compact-drawer .story-brand {
@@ -891,11 +894,11 @@
 
 @media (max-width: 1100px) {
   .story-shell {
-    --story-topbar-offset: 88px;
+    --story-topbar-offset: 72px;
   }
 
   .story-topbar.is-compact {
-    padding: 10px 16px;
+    padding: 8px 16px;
   }
 
   .story-topbar.is-compact .story-topbar-inner {
@@ -903,7 +906,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    min-height: 74px;
   }
 
   .story-topbar.is-compact .surface-topbar-start {
@@ -979,16 +981,19 @@
     grid-template-columns: 1fr;
   }
 
+  .story-hero {
+    grid-template-areas:
+      "copy"
+      "montage";
+    gap: 20px;
+  }
+
   .story-proof-stage,
   .story-proof-stage.proof-left {
     grid-template-columns: 1fr;
     grid-template-areas:
       "copy"
       "surface";
-  }
-
-  .story-hero {
-    gap: 20px;
   }
 
   .story-architecture-copy {
@@ -1002,7 +1007,7 @@
 
 @media (max-width: 720px) {
   .story-shell {
-    --story-topbar-offset: 72px;
+    --story-topbar-offset: 64px;
     padding: calc(var(--story-topbar-offset) + 16px) 16px 28px;
   }
 
@@ -1021,7 +1026,7 @@
 
   .story-topbar,
   .story-topbar.is-compact {
-    padding: 14px 16px;
+    padding: 6px 16px;
   }
 
   .story-topbar-inner {
