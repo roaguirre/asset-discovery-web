@@ -204,6 +204,10 @@ function TraceTreeBranch({
                 ...(node.badges ?? []),
               ]
                 .filter(Boolean)
+                .filter(
+                  (badge) =>
+                    !badge.split(" ").some((word) => isTechnicalId(word)),
+                )
                 .slice(0, 2)
                 .map((badge) => (
                   <span key={badge} className="pill pill-subtle">
