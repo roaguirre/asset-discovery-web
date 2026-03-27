@@ -165,7 +165,7 @@ export const storyEvents: LiveEventRecord[] = [
   {
     id: "evt-7",
     kind: "observation_added",
-    message: "Recorded 7 judge outcomes from dns_collector for portal.example-app.com.",
+    message: "Recorded 7 judge outcomes from web_hint_collector for exampleapp.io.",
     created_at: "2026-03-25T13:14:02Z",
   },
   {
@@ -341,7 +341,7 @@ export const storyRun: LiveRunRecord = {
 export const storyPendingPivots: LivePivotRecord[] = [
   {
     id: "pivot-portal",
-    root: "portal.example-app.com",
+    root: "exampleapp.io",
     status: "pending_review",
     collector: "web_hint_collector",
     scenario: "cross_root_domain",
@@ -350,16 +350,16 @@ export const storyPendingPivots: LivePivotRecord[] = [
     seed_domains: ["example-app.com"],
     recommendation_kind: "brand_overlap",
     recommendation_reason:
-      "Brand overlap, linked login references, and matching footer copy make this follow-up root a strong candidate.",
+      "Exact brand name in the registrable domain, linked from product navigation and footer on the primary seed site. Registration data aligns with the same company identity.",
     recommendation_score: 0.94,
     recommendation_notes: [
-      "Shared product language on the public site",
-      "Login links from the main seed domain",
+      "Footer links on example-app.com resolve to exampleapp.io",
+      "Same product vocabulary and navigation structure",
     ],
     candidate: {
       id: "candidate-portal",
       company_name: "Example App",
-      domains: ["portal.example-app.com"],
+      domains: ["exampleapp.io"],
       industry: "B2B SaaS",
     },
     created_at: "2026-03-25T13:12:00Z",
@@ -432,15 +432,15 @@ export const storyJudgeSummary: LiveJudgeSummary = {
       scenario: "cross_root_domain",
       accepted: [
         {
-          root: "portal.example-app.com",
+          root: "exampleapp.io",
           confidence: 0.94,
           kind: "brand_overlap",
           reason:
-            "Login references, repeated navigation copy, and policy linkage make this an explicit first-party follow-up candidate.",
+            "Exact brand name in the registrable domain. Footer links on example-app.com resolve here, and product navigation is structurally identical.",
           explicit: true,
           support: [
-            "Footer and legal links resolve back to example-app.com",
-            "Product language matches the main seed site",
+            "Footer links on example-app.com point to exampleapp.io",
+            "Product language and navigation structure match the seed site",
           ],
         },
       ],
@@ -473,13 +473,13 @@ export const storyJudgeSummary: LiveJudgeSummary = {
 
 export const storyTraceAsset: LiveAssetRow = {
   asset_id: "asset-portal",
-  identifier: "portal.example-app.com",
+  identifier: "exampleapp.io",
   asset_type: "domain",
-  domain_kind: "subdomain",
-  registrable_domain: "example-app.com",
+  domain_kind: "apex",
+  registrable_domain: "exampleapp.io",
   resolution_status: "active",
   ownership_state: "owned",
-  inclusion_reason: "Accepted pivot from web hint collector after manual review.",
+  inclusion_reason: "Accepted cross-root pivot from web hint collector. Brand name match confirmed by footer links and registration data.",
   source: "web_hint_collector",
   discovered_by: "web_hint_collector",
   enriched_by: "dns_enricher",
@@ -488,13 +488,13 @@ export const storyTraceAsset: LiveAssetRow = {
   status: "running",
   discovery_date: "2026-03-25T13:18:00Z",
   details:
-    "Observed on product navigation and linked login surfaces. DNS and web context support first-party ownership.",
+    "Discovered via footer links from example-app.com pointing to a different registrable domain. Brand name match and registration data confirm first-party ownership.",
   evidence_groups: [
     {
       title: "Ownership Evidence",
       items: [
-        "Footer and legal links resolve to example-app.com",
-        "Shared product copy across portal and primary domain",
+        "Footer links on example-app.com resolve to exampleapp.io",
+        "Identical product vocabulary and navigation structure",
       ],
     },
   ],
@@ -502,10 +502,10 @@ export const storyTraceAsset: LiveAssetRow = {
 
 export const storyTrace: LiveTrace = {
   asset_id: "asset-portal",
-  identifier: "portal.example-app.com",
+  identifier: "exampleapp.io",
   asset_type: "domain",
-  domain_kind: "subdomain",
-  registrable_domain: "example-app.com",
+  domain_kind: "apex",
+  registrable_domain: "exampleapp.io",
   resolution_status: "active",
   source: "web_hint_collector",
   discovered_by: "web_hint_collector",
@@ -532,7 +532,7 @@ export const storyTrace: LiveTrace = {
     {
       id: "trace-asset-root",
       kind: "asset",
-      label: "portal.example-app.com",
+      label: "exampleapp.io",
       subtitle: "Canonical asset",
       badges: ["Owned", "Domain"],
       linked_asset_id: "asset-portal",
@@ -540,7 +540,7 @@ export const storyTrace: LiveTrace = {
         {
           title: "Identity",
           items: [
-            "Registrable domain: example-app.com",
+            "Registrable domain: exampleapp.io",
             "Status: active",
           ],
         },
@@ -576,8 +576,8 @@ export const storyTrace: LiveTrace = {
         {
           title: "Observed Signals",
           items: [
-            "Primary navigation linked to portal.example-app.com/login",
-            "Footer legal and privacy links matched the seed domain",
+            "Footer links on example-app.com resolve to exampleapp.io",
+            "Product navigation structure identical to the primary seed site",
           ],
         },
       ],
