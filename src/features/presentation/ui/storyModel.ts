@@ -12,6 +12,7 @@ export type StoryCropKey =
   | "pivot-review"
   | "judge-analysis"
   | "trace-explorer"
+  | "trace-tree"
   | "activity-feed";
 
 export type StoryCrop = {
@@ -111,10 +112,17 @@ export const storyCrops: StoryCrop[] = [
   },
   {
     key: "trace-explorer",
-    label: "Trace Explorer",
+    label: "Trace Summary",
     title: "Every important asset can carry its supporting context with it.",
     caption:
       "Contributors, sections, tree nodes, and related assets make the run answer why something belongs here.",
+  },
+  {
+    key: "trace-tree",
+    label: "Trace Tree",
+    title: "The decision chain is a navigable tree of named, inspectable nodes.",
+    caption:
+      "Select any node to see the raw evidence, decision context, or enrichment record that justifies its place in the chain.",
   },
   {
     key: "activity-feed",
@@ -203,12 +211,21 @@ export const storyObservationBlocks: ObservationBlock[] = [
   },
   {
     id: "trace-explorer",
-    eyebrow: "Trace Context",
-    title: "Why an asset exists can be answered inside the product.",
+    eyebrow: "Provenance",
+    title: "Every asset traces back to the signal that first found it.",
     copy:
-      "Analysts do not have to reconstruct provenance from memory. The trace view keeps the decision chain, supporting evidence, and adjacent assets connected to the record.",
+      "The trace summary surfaces the seed context, decision chain, and enrichment record that brought an asset into scope. No reconstruction from memory.",
     crop: "trace-explorer",
     side: "right",
+  },
+  {
+    id: "trace-tree",
+    eyebrow: "Decision Trail",
+    title: "Walk the chain from asset to seed — one named node at a time.",
+    copy:
+      "The trace tree breaks the derivation into inspectable steps: canonical asset, accepted pivot, collector observation, and ownership evaluation. Selecting a node reveals the raw evidence behind that decision.",
+    crop: "trace-tree",
+    side: "left",
   },
   {
     id: "activity-feed",
@@ -533,69 +550,107 @@ export const storyTrace: LiveTrace = {
       id: "trace-asset-root",
       kind: "asset",
       label: "exampleapp.io",
-      subtitle: "Canonical asset",
-      badges: ["Owned", "Domain"],
+      subtitle: "domain",
+      badges: ["owned"],
       linked_asset_id: "asset-portal",
       details: [
         {
-          title: "Identity",
+          title: "Result",
           items: [
+            "Asset type: domain",
+            "Domain kind: apex",
             "Registrable domain: exampleapp.io",
-            "Status: active",
+            "Discovered by: web_hint_collector",
+            "Enriched by: dns_enricher",
+            "DNS resolution: active",
           ],
         },
       ],
     },
     {
-      id: "trace-pivot",
+      id: "trace-obs-group",
       parent_id: "trace-asset-root",
-      kind: "relation",
-      label: "Accepted pivot",
-      subtitle: "Manual review decision",
-      badges: ["Review"],
-      linked_relation_id: "relation-pivot-portal",
-      details: [
-        {
-          title: "Decision",
-          items: [
-            "Manual acceptance on 2026-03-25",
-            "Decision based on brand overlap and linked login flows",
-          ],
-        },
-      ],
+      kind: "group",
+      label: "Observations",
+      subtitle: "2 supporting observations",
     },
     {
       id: "trace-web-hint",
-      parent_id: "trace-pivot",
+      parent_id: "trace-obs-group",
       kind: "observation",
-      label: "Web hint evidence",
-      subtitle: "Homepage and footer references",
-      badges: ["Collector"],
-      linked_observation_id: "observation-web-hint",
+      label: "web_hint_collector",
+      subtitle: "exampleapp.io",
+      badges: ["discovery"],
       details: [
         {
-          title: "Observed Signals",
+          title: "Signal",
           items: [
             "Footer links on example-app.com resolve to exampleapp.io",
-            "Product navigation structure identical to the primary seed site",
+            "Product navigation structure matches the seed site",
           ],
         },
       ],
     },
     {
-      id: "trace-ownership",
-      parent_id: "trace-pivot",
-      kind: "evaluation",
-      label: "Ownership reasoning",
-      subtitle: "Why the asset stayed in scope",
-      badges: ["Judge"],
+      id: "trace-dns-obs",
+      parent_id: "trace-obs-group",
+      kind: "observation",
+      label: "dns_enricher",
+      subtitle: "exampleapp.io",
+      badges: ["enrichment"],
       details: [
         {
-          title: "Supporting Context",
+          title: "DNS Result",
           items: [
-            "Shared product vocabulary across seed and portal",
-            "DNS enrichment aligned with first-party hosting patterns",
-            "No conflicting third-party brand or hosting evidence",
+            "DNS resolution: active",
+            "Resolution aligned with first-party hosting patterns",
+          ],
+        },
+      ],
+    },
+    {
+      id: "trace-seed-group",
+      parent_id: "trace-asset-root",
+      kind: "group",
+      label: "Seed Context",
+      subtitle: "1 contributing seed",
+    },
+    {
+      id: "trace-seed",
+      parent_id: "trace-seed-group",
+      kind: "seed",
+      label: "Example App",
+      subtitle: "seed-primary",
+      badges: ["example-app.com"],
+      details: [
+        {
+          title: "Seed Context",
+          items: [
+            "Company: Example App",
+            "Seed domains: example-app.com",
+          ],
+        },
+      ],
+    },
+    {
+      id: "trace-enrichment-group",
+      parent_id: "trace-asset-root",
+      kind: "group",
+      label: "Enrichment",
+      subtitle: "Runtime enrichment results",
+    },
+    {
+      id: "trace-dns-enricher",
+      parent_id: "trace-enrichment-group",
+      kind: "enrichment",
+      label: "dns_enricher",
+      subtitle: "exampleapp.io",
+      details: [
+        {
+          title: "Enrichment",
+          items: [
+            "Status: completed",
+            "DNS resolution: active",
           ],
         },
       ],
@@ -606,7 +661,7 @@ export const storyTrace: LiveTrace = {
       title: "Seed Context",
       items: [
         "The run started from Example App and example-app.com.",
-        "The portal root was discovered during follow-up web collection.",
+        "exampleapp.io was surfaced via a footer link during web hint collection — a different registrable domain from the seed.",
       ],
     },
     {
@@ -620,7 +675,7 @@ export const storyTrace: LiveTrace = {
       title: "Enrichment",
       items: [
         "DNS enrichment resolved the asset as active.",
-        "Trace lineage linked the portal back to the seed domain.",
+        "Trace lineage confirmed the cross-root relationship back to example-app.com.",
       ],
     },
   ],

@@ -13,7 +13,8 @@ import {
   StoryProofStage,
   StoryPivotsViewMock,
   StoryRunOverviewMock,
-  StoryTraceExplorerMock,
+  StoryTraceSummaryMock,
+  StoryTraceWorkspaceMock,
 } from "./StoryMockViews";
 import {
   storyCapabilityGroups,
@@ -353,7 +354,17 @@ export function PresentationSite({
                   <StoryActivityMock />
                 </StoryCropFigure>
               );
-            } else {
+            } else if (block.crop === "trace-explorer") {
+              surface = (
+                <StoryCropFigure
+                  crop={crop}
+                  className="is-proof-panel"
+                  captionMode="label-only"
+                >
+                  <StoryTraceSummaryMock />
+                </StoryCropFigure>
+              );
+            } else if (block.crop === "trace-tree") {
               surface = (
                 <StoryCropFigure
                   crop={crop}
@@ -361,9 +372,11 @@ export function PresentationSite({
                   className="is-proof-panel"
                   captionMode="label-only"
                 >
-                  <StoryTraceExplorerMock />
+                  <StoryTraceWorkspaceMock />
                 </StoryCropFigure>
               );
+            } else {
+              surface = null;
             }
 
             return (
@@ -435,7 +448,7 @@ export function PresentationSite({
       <section className="story-architecture-band" id="architecture">
         <div className="story-architecture-copy">
           <p className="eyebrow">System Design</p>
-          <h2>Every expansion goes through the scheduler. No collector recurses.</h2>
+          <h2>Every pivot is an explicit decision. Discovery stays bounded by design.</h2>
           <p>
             The pipeline is acyclic by design. An LLM gates every ownership
             claim at the collector boundary, accepted pivots return to the

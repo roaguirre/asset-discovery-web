@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
-import type { LivePivotRecord } from "../../discovery/core/types";
+import { humanizeToken } from "../../discovery/core/assetTable";
+import { buildTraceChildren } from "../../discovery/core/traceModel";
+import type { LivePivotRecord, TraceNode } from "../../discovery/core/types";
 import { JudgeAnalysisPanel } from "../../discovery/ui/components/JudgeAnalysisPanel";
-import { TraceExplorer } from "../../discovery/ui/components/TraceExplorer";
+import { TraceSummaryCard, TraceExplorer } from "../../discovery/ui/components/TraceExplorer";
 import { RunOverviewPanel } from "../../discovery/ui/components/RunOverviewPanel";
 import {
   PivotsView,
@@ -387,7 +389,7 @@ export function StoryJudgeAnalysisMock() {
  * can demonstrate explainability with the real trace explorer UI.
  */
 export function StoryTraceExplorerMock() {
-  const [selectedNodeID, setSelectedNodeID] = useState("trace-ownership");
+  const [selectedNodeID, setSelectedNodeID] = useState("trace-asset-root");
   const selectedNode =
     storyTrace.nodes?.find((node) => node.id === selectedNodeID) ?? null;
 
@@ -409,4 +411,150 @@ export function StoryTraceExplorerMock() {
  */
 export function StoryActivityMock() {
   return <ActivityTerminal events={storyEvents} />;
+}
+
+/**
+ * StoryTraceSummaryMock renders only the trace summary card so the proof
+ * section can show provenance context without the full explorer layout.
+ */
+export function StoryTraceSummaryMock() {
+  return (
+    <div className="trace-explorer">
+      <TraceSummaryCard trace={storyTrace} asset={storyTraceAsset} />
+    </div>
+  );
+}
+
+/**
+ * StoryTraceWorkspaceMock renders the trace tree and node details panel
+ * directly — skipping the summary card — so the decision chain is the
+ * immediate focus for the Decision Trail proof section.
+ */
+export function StoryTraceWorkspaceMock() {
+  const [selectedNodeID, setSelectedNodeID] = useState("trace-asset-root");
+  const selectedNode: TraceNode | null =
+    storyTrace.nodes?.find((n) => n.id === selectedNodeID) ?? null;
+  const children = buildTraceChildren(storyTrace);
+
+  return (
+    <div className="trace-explorer">
+      <div className="trace-workspace-live">
+        <aside className="trace-tree-shell-live">
+          <div className="subsection-heading">
+            <h3>Trace Tree</h3>
+            <span>{storyTrace.nodes?.length ?? 0}</span>
+          </div>
+          <div className="trace-tree-list">
+            <StoryTraceTreeBranch
+              children={children}
+              parentID="__root__"
+              selectedNodeID={selectedNodeID}
+              onSelectNode={setSelectedNodeID}
+              depth={0}
+            />
+          </div>
+        </aside>
+        <section className="trace-panel-shell-live">
+          <div className="subsection-heading">
+            <h3>Node Details</h3>
+            <span>
+              {selectedNode ? humanizeToken(selectedNode.kind, "Node") : "Select a node"}
+            </span>
+          </div>
+          {selectedNode ? (
+            <div className="trace-node-detail-stack">
+              <article className="trace-card">
+                <h4>{selectedNode.label}</h4>
+                <p className="panel-copy">
+                  {selectedNode.subtitle || humanizeToken(selectedNode.kind, "Node")}
+                </p>
+                {selectedNode.kind ? (
+                  <div className="badge-row">
+                    <span className="pill pill-subtle">
+                      {humanizeToken(selectedNode.kind)}
+                    </span>
+                  </div>
+                ) : null}
+              </article>
+              {(selectedNode.details ?? []).map((section) => (
+                <article key={section.title} className="trace-card">
+                  <h4>{section.title}</h4>
+                  <ul>
+                    {(section.items ?? []).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-copy">Select a node to inspect its evidence.</p>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function StoryTraceTreeBranch({
+  children,
+  parentID,
+  selectedNodeID,
+  onSelectNode,
+  depth,
+}: {
+  children: Map<string, TraceNode[]>;
+  parentID: string;
+  selectedNodeID: string;
+  onSelectNode: (id: string) => void;
+  depth: number;
+}) {
+  const nodes = children.get(parentID) ?? [];
+  return (
+    <>
+      {nodes.map((node) => (
+        <div
+          key={node.id}
+          className="trace-tree-node"
+          style={{ ["--trace-depth" as string]: String(depth) }}
+        >
+          <button
+            type="button"
+            className={`trace-node-button ${node.id === selectedNodeID ? "is-active" : ""}`}
+            onClick={() => onSelectNode(node.id)}
+          >
+            <span className="trace-node-copy">
+              <strong>{node.label}</strong>
+              <span>
+                {node.subtitle && node.subtitle !== node.label
+                  ? node.subtitle
+                  : humanizeToken(node.kind, "Node")}
+              </span>
+            </span>
+            <span className="trace-node-badges">
+              {[node.kind ? humanizeToken(node.kind) : "", ...(node.badges ?? [])]
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((badge) => (
+                  <span key={badge} className="pill pill-subtle">
+                    {badge}
+                  </span>
+                ))}
+            </span>
+          </button>
+          {(children.get(node.id) ?? []).length > 0 ? (
+            <div className="trace-tree-children">
+              <StoryTraceTreeBranch
+                children={children}
+                parentID={node.id}
+                selectedNodeID={selectedNodeID}
+                onSelectNode={onSelectNode}
+                depth={depth + 1}
+              />
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </>
+  );
 }

@@ -300,13 +300,13 @@ describe("App", () => {
       within(storyHero as HTMLElement).getByLabelText("Run Overview mock view"),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Trace Explorer mock view"),
+      screen.getByLabelText("Trace Summary mock view"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Trace Tree mock view"),
     ).toBeInTheDocument();
     expect(
       within(storyHero as HTMLElement).queryByText("Pivot Review"),
-    ).toBeNull();
-    expect(
-      within(storyHero as HTMLElement).queryByText("Trace Summary"),
     ).toBeNull();
 
     await user.click(
