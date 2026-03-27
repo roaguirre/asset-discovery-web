@@ -55,7 +55,7 @@ export const storyRepositories: StoryRepository[] = [
     href: "https://github.com/roaguirre/asset-discovery-web",
     license: "MIT License",
     copy:
-      "React and Firebase workspace for live runs, pivot review, grouped judge analysis, trace context, and presentation surfaces.",
+      "Browser client for live runs, pivot review, grouped judge analysis, trace context, and presentation surfaces.",
   },
   {
     surface: "backend",
@@ -65,7 +65,7 @@ export const storyRepositories: StoryRepository[] = [
     href: "https://github.com/roaguirre/asset-discovery",
     license: "MIT License",
     copy:
-      "Go discovery engine for schedulers, collectors, enrichers, canonical assets, exports, and the DAG-oriented runtime model.",
+      "Discovery engine for schedulers, collectors, enrichers, canonical assets, exports, and the DAG-oriented runtime model.",
   },
 ];
 
@@ -246,7 +246,7 @@ export const storyCapabilityGroups: CapabilityGroup[] = [
     title: "Operational Delivery",
     tone: "ink",
     items: [
-      "Firebase-backed live run model",
+      "Event-driven live run model",
       "Manual and autonomous execution modes",
       "JSON, CSV, and XLSX exports",
       "DAG visualization for technical review",

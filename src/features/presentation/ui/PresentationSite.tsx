@@ -444,7 +444,7 @@ export function PresentationSite({
           <h2>The demo is split into frontend and backend repositories you can inspect directly.</h2>
           <p>
             Both repositories carry MIT licenses and point to the actual
-            workspace and Go engine used throughout the demo.
+            workspace and discovery engine used throughout the demo.
           </p>
         </div>
         <div className="story-grid story-grid-two">
