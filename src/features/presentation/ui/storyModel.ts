@@ -254,37 +254,59 @@ export const storyCapabilityGroups: CapabilityGroup[] = [
   },
 ];
 
-export const walkthroughSteps = [
+export type WalkthroughStep = {
+  step: string;
+  phase: string;
+  title: string;
+  copy: string;
+  signals: string[];
+};
+
+export const walkthroughSteps: WalkthroughStep[] = [
   {
     step: "1",
-    title: "Start from a compact seed set",
-    copy:
-      "Use a company name and a small domain list so the expansion path stays visible instead of disappearing into a large seed file.",
+    phase: "Scope definition",
+    title: "Seed the investigation",
+    copy: "Start with what you know — a company name and confirmed domains. These become the first frontier wave; the system discovers everything else and attributes it back to this starting point.",
+    signals: ["company name", "known domains", "4 seeds"],
   },
   {
     step: "2",
-    title: "Run manual mode first",
-    copy:
-      "Manual mode demonstrates that AI recommendations can be strong without removing human control from the workflow.",
+    phase: "Signal collection",
+    title: "Fan out across passive sources",
+    copy: "Collectors run in parallel: certificate transparency logs, DNS records, registrar data, web navigation hints, and network ranges. No active scanning, no noise introduced.",
+    signals: ["crt.sh", "RDAP", "DNS records", "web hints", "ASN / CIDR"],
   },
   {
     step: "3",
-    title: "Read the run before the details",
-    copy:
-      "Stop at waves, seeds, assets, judge totals, pending pivots, and exports to show the shape of the work clearly.",
+    phase: "AI-assisted pivot review",
+    title: "Decide which roots to follow",
+    copy: "The judge scores each expansion candidate and flags ambiguous pivots for structured human review. Brand overlap, linked authentication, shared navigation — the reasoning is explicit before you commit.",
+    signals: ["confidence 0.94", "brand overlap", "subdomain follow-up", "accept / reject"],
   },
   {
     step: "4",
-    title: "Inspect recommendation quality",
-    copy:
-      "Open pivots and judge analysis to show why one candidate deserves follow-up while another one gets discarded.",
+    phase: "Frontier expansion",
+    title: "Accepted pivots seed the next wave",
+    copy: "Each accepted pivot returns to the scheduler as a new frontier seed. The run expands without recursion — the same collector cannot revisit what it already proposed.",
+    signals: ["new frontier seed", "wave N+1", "acyclic expansion"],
   },
   {
     step: "5",
-    title: "Move from asset rows to explanations",
-    copy:
-      "Browse the asset set, then open the trace to answer why a row belongs in the run without leaving the product.",
+    phase: "Provenance and delivery",
+    title: "Trace every asset and export with attribution",
+    copy: "The trace view connects each asset to its origin signal, collector, judge outcome, and review decision. Export with full lineage intact — recipients can inspect the reasoning themselves.",
+    signals: ["origin trace", "ownership state", "JSON", "CSV", "XLSX"],
   },
+];
+
+export const architectureCollectors = [
+  { label: "cert.sh", desc: "Certificate logs" },
+  { label: "DNS", desc: "Record resolution" },
+  { label: "Web hints", desc: "Navigation + content" },
+  { label: "RDAP", desc: "Registrar data" },
+  { label: "ASN / CIDR", desc: "Network ranges" },
+  { label: "Wayback", desc: "Passive history" },
 ];
 
 export const architecturePoints = [

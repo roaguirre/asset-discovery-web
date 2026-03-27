@@ -854,6 +854,49 @@ describe("App", () => {
     );
   });
 
+  it("closes the popup and shows a generic message when a download preflight fails", async () => {
+    const deps = new FakeLiveDeps({
+      authSession: {
+        uid: "uid-1",
+        email: "roaguirred@gmail.com",
+        emailVerified: true,
+      },
+      runs: [
+        buildRun("run-1", {
+          downloads: {
+            json: "runs/run-1/results.json",
+          },
+        }),
+      ],
+    });
+    deps.resolveRunArtifactURL.mockRejectedValueOnce(
+      new Error("Downloads unavailable right now."),
+    );
+    const user = userEvent.setup();
+    const windowOpen = vi.fn();
+    const popupWindow = {
+      closed: false,
+      opener: null as Window | null,
+      location: {
+        replace: vi.fn(),
+      },
+      close: vi.fn(),
+    };
+    windowOpen.mockReturnValue(popupWindow);
+    vi.stubGlobal("open", windowOpen);
+
+    render(<App deps={deps} />);
+
+    await user.click(await screen.findByRole("button", { name: "JSON" }));
+
+    expect(windowOpen).toHaveBeenCalledWith("", "_blank");
+    expect(popupWindow.close).toHaveBeenCalledTimes(1);
+    expect(popupWindow.location.replace).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText("Downloads unavailable right now."),
+    ).toBeInTheDocument();
+  });
+
   it("shows explicit download states when artifacts are still missing", async () => {
     const deps = new FakeLiveDeps({
       authSession: {

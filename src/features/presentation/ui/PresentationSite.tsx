@@ -6,8 +6,7 @@ import {
 } from "../../../components/surface";
 import {
   StoryActivityMock,
-  StoryArchitectureDiagram,
-  StoryArchitecturePrinciples,
+  StoryArchitecturePipeline,
   StoryCapabilityBand,
   StoryCropFigure,
   StoryJudgeAnalysisMock,
@@ -17,6 +16,7 @@ import {
   StoryTraceExplorerMock,
 } from "./StoryMockViews";
 import {
+  architecturePoints,
   storyCapabilityGroups,
   storyCrops,
   storyObservationBlocks,
@@ -399,42 +399,60 @@ export function PresentationSite({
       </section>
 
       <section className="story-section story-walkthrough-section" id="walkthrough">
-        <div className="story-section-header">
-          <p className="eyebrow">Live Walkthrough</p>
-          <h2>The demo flow leads with proof surfaces first, then expands into the underlying workflow.</h2>
-          <p>
-            Manual mode leads because it shows recommendation quality without
-            asking the audience to trust automation before they have seen the
-            reasoning.
-          </p>
+        <div className="story-walkthrough-layout">
+          <div className="story-walkthrough-intro">
+            <p className="eyebrow">OSINT Workflow</p>
+            <h2>From seed to surface in a single traceable run.</h2>
+            <p>
+              Each step extends coverage without hiding the reasoning. Seeds
+              become signals, signals become reviewed decisions, decisions become
+              attributable findings you can inspect.
+            </p>
+          </div>
+          <ol className="story-walkthrough-flow">
+            {walkthroughSteps.map((step) => (
+              <li key={step.step} className="story-walkthrough-step">
+                <div className="story-step-marker">
+                  <span className="story-step-num">{step.step}</span>
+                </div>
+                <div className="story-step-body">
+                  <span className="story-step-phase">{step.phase}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.copy}</p>
+                  <div className="story-step-signals">
+                    {step.signals.map((signal) => (
+                      <span key={signal} className="story-step-signal">
+                        {signal}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
-        <ol className="story-timeline">
-          {walkthroughSteps.map((step) => (
-            <li key={step.step} className="story-timeline-item">
-              <span className="story-step">{step.step}</span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.copy}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
       </section>
 
       <section className="story-architecture-band" id="architecture">
         <div className="story-architecture-copy">
-          <p className="eyebrow">Technical Proof</p>
-          <h2>The architecture stays disciplined so the product can expand without feeling chaotic.</h2>
+          <p className="eyebrow">System Design</p>
+          <h2>Every expansion goes through the scheduler. No collector recurses.</h2>
           <p>
-            This is the supporting argument after the product story lands: new
-            seeds go back to the scheduler, the pipeline remains acyclic, and
-            ambiguity can be revisited without letting the system recurse
-            blindly.
+            The pipeline is acyclic by design. Collectors hand raw signals to
+            the judge, accepted pivots return to the scheduler as new frontier
+            seeds, and the asset store deduplicates across waves.
           </p>
+          <div className="story-architecture-principles">
+            {architecturePoints.map((point) => (
+              <article key={point.title} className="story-architecture-point">
+                <h3>{point.title}</h3>
+                <p>{point.copy}</p>
+              </article>
+            ))}
+          </div>
         </div>
         <div className="story-architecture-visual">
-          <StoryArchitectureDiagram />
-          <StoryArchitecturePrinciples />
+          <StoryArchitecturePipeline />
         </div>
       </section>
 

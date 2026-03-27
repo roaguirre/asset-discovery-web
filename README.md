@@ -87,6 +87,8 @@ The live download flow resolves artifact paths from Firebase Storage rather than
 npx -y firebase-tools@latest target:apply storage exports <artifact-bucket>
 ```
 
+- The named exports bucket must also stay linked and healthy in the Firebase Storage console. If tokenized `alt=media` download URLs start returning `412 Precondition Failed` with the Firebase service-account error, re-link the bucket from the Storage page, wait for propagation, and retry the download.
+
 `npm run test:firebase:rules` starts the Firestore and Storage emulators through the Firebase CLI, applies [`firestore.rules`](firestore.rules) and [`storage.rules`](storage.rules), and verifies creator-only reads plus the client-write deny rules. The wrapper script automatically selects an installed JDK 21+ when the system default Java is older.
 
 Existing runs are not backfilled. Only runs completed after the artifact publisher is configured will show working download actions.

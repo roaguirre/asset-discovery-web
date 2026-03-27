@@ -40,6 +40,22 @@ import type {
   LiveTrace,
 } from "../core/types";
 
+const artifactDownloadUnavailableMessage = "Downloads unavailable right now.";
+const objectNotFoundStorageErrorCode = "storage/object-not-found";
+const noDownloadURLStorageErrorCode = "storage/no-download-url";
+
+/**
+ * ArtifactDownloadUnavailableError marks download failures that should be
+ * surfaced to the user as a generic unavailable state instead of raw Firebase
+ * infrastructure details.
+ */
+class ArtifactDownloadUnavailableError extends Error {
+  constructor() {
+    super(artifactDownloadUnavailableMessage);
+    this.name = "ArtifactDownloadUnavailableError";
+  }
+}
+
 /**
  * buildFirebaseLiveDeps preserves the app's existing dependency seam while
  * composing smaller Firebase-backed ports internally.
@@ -189,12 +205,12 @@ function buildFirebaseRunDataDeps(
         return cached;
       }
 
-      const pending = getDownloadURL(storageRef(storage, trimmed)).catch(
-        (error: unknown) => {
+      const pending = getDownloadURL(storageRef(storage, trimmed))
+        .then((url) => preflightRunArtifactURL(url))
+        .catch((error: unknown) => {
           downloadURLCache.delete(trimmed);
-          throw error;
-        },
-      );
+          throw normalizeRunArtifactDownloadError(error);
+        });
       downloadURLCache.set(trimmed, pending);
       return pending;
     },
@@ -278,6 +294,45 @@ function compareDates(
 }
 
 /**
+ * preflightRunArtifactURL verifies that a resolved Firebase Storage download
+ * URL can actually serve content before the UI navigates a popup to it.
+ */
+export async function preflightRunArtifactURL(
+  url: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
+  try {
+    const response = await fetchImpl(url, { method: "HEAD" });
+    if (!response.ok) {
+      throw new ArtifactDownloadUnavailableError();
+    }
+    return url;
+  } catch (error) {
+    if (error instanceof ArtifactDownloadUnavailableError) {
+      throw error;
+    }
+    throw new ArtifactDownloadUnavailableError();
+  }
+}
+
+/**
+ * normalizeRunArtifactDownloadError collapses known Firebase Storage download
+ * failures into a generic unavailable state while preserving unrelated errors.
+ */
+export function normalizeRunArtifactDownloadError(error: unknown): Error {
+  if (error instanceof ArtifactDownloadUnavailableError) {
+    return error;
+  }
+  if (isKnownRunArtifactDownloadFailure(error)) {
+    return new ArtifactDownloadUnavailableError();
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new ArtifactDownloadUnavailableError();
+}
+
+/**
  * parseAPIResponse converts the live API response body into JSON and prefers
  * explicit API error messages over transport-level fallback text.
  */
@@ -314,4 +369,45 @@ function parseResponseBody<T>(rawBody: string): T | undefined {
   } catch {
     return undefined;
   }
+}
+
+function isKnownRunArtifactDownloadFailure(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as {
+    code?: unknown;
+    message?: unknown;
+    serverResponse?: unknown;
+    customData?: { serverResponse?: unknown };
+  };
+  const code = String(candidate.code ?? "").trim();
+  if (
+    code === objectNotFoundStorageErrorCode ||
+    code === noDownloadURLStorageErrorCode
+  ) {
+    return true;
+  }
+
+  const serverResponse = readStorageServerResponse(candidate);
+  return (
+    /required service account is missing necessary permissions/i.test(
+      serverResponse,
+    ) || /"code"\s*:\s*412\b/.test(serverResponse)
+  );
+}
+
+function readStorageServerResponse(candidate: {
+  message?: unknown;
+  serverResponse?: unknown;
+  customData?: { serverResponse?: unknown };
+}): string {
+  return [
+    candidate.serverResponse,
+    candidate.customData?.serverResponse,
+    candidate.message,
+  ]
+    .map((value) => String(value ?? "").trim())
+    .find((value) => value.length > 0) ?? "";
 }

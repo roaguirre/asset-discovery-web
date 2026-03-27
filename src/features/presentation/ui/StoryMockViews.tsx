@@ -10,7 +10,7 @@ import {
 import { ActivityTerminal } from "../../discovery/ui/views/ActivityView";
 import type { CapabilityGroup, StoryCrop } from "./storyModel";
 import {
-  architecturePoints,
+  architectureCollectors,
   storyAuditPivots,
   storyEvents,
   storyJudgeSummary,
@@ -130,56 +130,143 @@ export function StoryCapabilityBand({ group }: { group: CapabilityGroup }) {
 }
 
 /**
- * StoryArchitectureDiagram explains the scheduler-owned frontier flow with a
- * purpose-built visual instead of another generic card list.
+ * StoryArchitecturePipeline replaces the former flat flow + principles cards
+ * with a vertical system-design pipeline that shows the full runtime topology:
+ * seeds → scheduler → collectors → judge/review → asset store.
+ *
+ * The scheduler node carries a feedback badge to communicate the closed-loop
+ * frontier expansion model without needing a real arrow overlay.
  */
-export function StoryArchitectureDiagram() {
+export function StoryArchitecturePipeline() {
   return (
-    <div className="story-frontier-diagram" aria-label="Scheduler frontier diagram">
-      <div className="story-flow-node">
-        <span>Seed frontier</span>
-        <strong>Current wave</strong>
+    <div className="arch-pipeline" aria-label="Discovery system architecture pipeline">
+
+      {/* Seeds */}
+      <div className="arch-node arch-node--seeds">
+        <header className="arch-node-header">
+          <span className="arch-node-tag">Input</span>
+        </header>
+        <strong className="arch-node-name">Seed Frontier</strong>
+        <p className="arch-node-desc">
+          Company name + known domains define the initial wave scope.
+        </p>
+        <div className="arch-chips">
+          <span>4 seeds</span>
+          <span>example-app.com</span>
+        </div>
       </div>
-      <span className="story-flow-arrow" aria-hidden="true">
-        →
-      </span>
-      <div className="story-flow-node">
-        <span>Collectors</span>
-        <strong>Signals gathered</strong>
+
+      <div className="arch-conn" aria-hidden="true">
+        <div className="arch-conn-track" />
+        <span className="arch-conn-label">frontier input</span>
       </div>
-      <span className="story-flow-arrow" aria-hidden="true">
-        →
-      </span>
-      <div className="story-flow-node">
-        <span>Judge + review</span>
-        <strong>Pivots accepted or discarded</strong>
+
+      {/* Scheduler — the orchestration core */}
+      <div className="arch-node arch-node--scheduler">
+        <header className="arch-node-header">
+          <span className="arch-node-tag">Orchestration</span>
+          <div className="arch-node-pulse" aria-hidden="true" />
+        </header>
+        <strong className="arch-node-name">Scheduler</strong>
+        <p className="arch-node-desc">
+          Wave-by-wave dispatch. Nothing is explored without scheduler authorization.
+        </p>
+        <div className="arch-chips arch-chips--accent">
+          <span>acyclic</span>
+          <span>wave-bounded</span>
+          <span>DAG-oriented</span>
+        </div>
+        <div className="arch-feedback-badge" aria-label="Feedback loop: accepted pivots return to scheduler">
+          <span className="arch-feedback-icon" aria-hidden="true">↰</span>
+          accepted pivots return here as new frontier seeds
+        </div>
       </div>
-      <span className="story-flow-arrow" aria-hidden="true">
-        →
-      </span>
-      <div className="story-flow-node is-accent">
-        <span>Scheduler</span>
-        <strong>Next frontier released</strong>
+
+      <div className="arch-conn" aria-hidden="true">
+        <div className="arch-conn-track" />
+        <span className="arch-conn-label">dispatches collectors</span>
       </div>
+
+      {/* Collectors cluster */}
+      <div className="arch-node arch-node--collectors">
+        <header className="arch-node-header">
+          <span className="arch-node-tag">Signal Collection</span>
+        </header>
+        <strong className="arch-node-name">Collectors</strong>
+        <div className="arch-collector-grid">
+          {architectureCollectors.map((c) => (
+            <div key={c.label} className="arch-collector-item">
+              <span className="arch-collector-name">{c.label}</span>
+              <span className="arch-collector-desc">{c.desc}</span>
+            </div>
+          ))}
+        </div>
+        <p className="arch-node-desc arch-node-desc--small">
+          Each collector is stateless. Signals route to the judge, not back into collection.
+        </p>
+      </div>
+
+      <div className="arch-conn" aria-hidden="true">
+        <div className="arch-conn-track" />
+        <span className="arch-conn-label">raw signals</span>
+      </div>
+
+      {/* Judge + Review side-by-side */}
+      <div className="arch-split">
+        <div className="arch-node arch-node--judge">
+          <span className="arch-node-tag">Automated</span>
+          <strong className="arch-node-name">Judge</strong>
+          <p className="arch-node-desc">
+            Scores and classifies each expansion candidate. Accepted, discarded, or escalated to review.
+          </p>
+        </div>
+        <div className="arch-split-conn" aria-hidden="true">
+          <div className="arch-split-line" />
+          <span className="arch-split-label">pending<br />review</span>
+        </div>
+        <div className="arch-node arch-node--review">
+          <span className="arch-node-tag">Human</span>
+          <strong className="arch-node-name">Review Surface</strong>
+          <p className="arch-node-desc">
+            Ambiguous pivots become explicit decisions. No silent scope expansion.
+          </p>
+        </div>
+      </div>
+
+      <div className="arch-conn" aria-hidden="true">
+        <div className="arch-conn-track" />
+        <span className="arch-conn-label">canonical assets</span>
+      </div>
+
+      {/* Asset Store */}
+      <div className="arch-node arch-node--store">
+        <header className="arch-node-header">
+          <span className="arch-node-tag">Output</span>
+        </header>
+        <strong className="arch-node-name">Asset Store</strong>
+        <p className="arch-node-desc">
+          Deduplicated canonical results. Every asset carries its provenance, trace, and decision history.
+        </p>
+        <div className="arch-chips">
+          <span>JSON</span>
+          <span>CSV</span>
+          <span>XLSX</span>
+          <span>full provenance</span>
+        </div>
+      </div>
+
     </div>
   );
 }
 
-/**
- * StoryArchitecturePrinciples keeps the architecture section concise while
- * still exposing the runtime decisions that support the product story.
- */
+/** @deprecated Use StoryArchitecturePipeline */
+export function StoryArchitectureDiagram() {
+  return <StoryArchitecturePipeline />;
+}
+
+/** @deprecated Integrated into StoryArchitecturePipeline */
 export function StoryArchitecturePrinciples() {
-  return (
-    <div className="story-architecture-principles">
-      {architecturePoints.map((point) => (
-        <article key={point.title} className="story-architecture-point">
-          <h3>{point.title}</h3>
-          <p>{point.copy}</p>
-        </article>
-      ))}
-    </div>
-  );
+  return null;
 }
 
 /**
