@@ -175,6 +175,7 @@ export function StoryArchitecturePipeline() {
           <span>acyclic</span>
           <span>wave-bounded</span>
           <span>DAG-oriented</span>
+          <span>max 2 discovered frontiers</span>
         </div>
         <div className="arch-feedback-badge" aria-label="Feedback loop: accepted pivots return to scheduler">
           <span className="arch-feedback-icon" aria-hidden="true">↰</span>
@@ -202,7 +203,7 @@ export function StoryArchitecturePipeline() {
           ))}
         </div>
         <p className="arch-node-desc arch-node-desc--small">
-          Each collector is stateless. Signals route to the judge, not back into collection.
+          11 collectors total. Every cross-root result is LLM-judged before advancing as a seed.
         </p>
       </div>
 
@@ -214,11 +215,16 @@ export function StoryArchitecturePipeline() {
       {/* Judge + Review side-by-side */}
       <div className="arch-split">
         <div className="arch-node arch-node--judge">
-          <span className="arch-node-tag">Automated</span>
-          <strong className="arch-node-name">Judge</strong>
+          <span className="arch-node-tag">LLM · Automated</span>
+          <strong className="arch-node-name">Ownership Judge</strong>
           <p className="arch-node-desc">
-            Scores and classifies each expansion candidate. Accepted, discarded, or escalated to review.
+            LLM evaluates each cross-root candidate against seed context. Returns confidence, kind, and reasoning. Accepted or discarded — both stay traceable.
           </p>
+          <div className="arch-chips" style={{marginTop: "6px"}}>
+            <span>temp=0</span>
+            <span>JSON output</span>
+            <span>conservative</span>
+          </div>
         </div>
         <div className="arch-split-conn" aria-hidden="true">
           <div className="arch-split-line" />
@@ -252,6 +258,42 @@ export function StoryArchitecturePipeline() {
           <span>CSV</span>
           <span>XLSX</span>
           <span>full provenance</span>
+        </div>
+      </div>
+
+      <div className="arch-conn arch-conn--dashed" aria-hidden="true">
+        <div className="arch-conn-track" />
+        <span className="arch-conn-label">post-run · bounded reconsideration</span>
+      </div>
+
+      {/* Bounded Reconsideration */}
+      <div className="arch-node arch-node--reconsider">
+        <header className="arch-node-header">
+          <span className="arch-node-tag">Reconsideration · Post-Run</span>
+        </header>
+        <strong className="arch-node-name">Bounded Reconsideration</strong>
+        <p className="arch-node-desc">
+          After all frontier waves are exhausted, discarded candidates are re-evaluated once with full run context — a complete picture of what was accepted and why.
+        </p>
+        <div className="arch-reconsider-steps">
+          <div className="arch-reconsider-step">
+            <span className="arch-reconsider-step-label">Discarded pool</span>
+            <span className="arch-reconsider-step-desc">All rejected candidates from every wave, preserved with their original evidence.</span>
+          </div>
+          <span className="arch-reconsider-arrow" aria-hidden="true">→</span>
+          <div className="arch-reconsider-step">
+            <span className="arch-reconsider-step-label">LLM re-evaluates</span>
+            <span className="arch-reconsider-step-desc">Judged again with the full accepted-asset set as context. Confidence may shift.</span>
+          </div>
+          <span className="arch-reconsider-arrow" aria-hidden="true">→</span>
+          <div className="arch-reconsider-step">
+            <span className="arch-reconsider-step-label">One extra wave</span>
+            <span className="arch-reconsider-step-desc">Promoted candidates seed exactly one additional frontier — never recursive.</span>
+          </div>
+        </div>
+        <div className="arch-reconsider-outcome">
+          <span className="arch-reconsider-outcome-icon" aria-hidden="true">↰</span>
+          promoted candidates return to the scheduler as a single bounded wave
         </div>
       </div>
 

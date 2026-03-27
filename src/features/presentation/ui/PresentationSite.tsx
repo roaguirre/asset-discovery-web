@@ -16,7 +16,6 @@ import {
   StoryTraceExplorerMock,
 } from "./StoryMockViews";
 import {
-  architecturePoints,
   storyCapabilityGroups,
   storyCrops,
   storyObservationBlocks,
@@ -438,18 +437,19 @@ export function PresentationSite({
           <p className="eyebrow">System Design</p>
           <h2>Every expansion goes through the scheduler. No collector recurses.</h2>
           <p>
-            The pipeline is acyclic by design. Collectors hand raw signals to
-            the judge, accepted pivots return to the scheduler as new frontier
-            seeds, and the asset store deduplicates across waves.
+            The pipeline is acyclic by design. An LLM gates every ownership
+            claim at the collector boundary, accepted pivots return to the
+            scheduler as new frontier seeds, and the asset store deduplicates
+            across waves by identity.
           </p>
-          <div className="story-architecture-principles">
-            {architecturePoints.map((point) => (
-              <article key={point.title} className="story-architecture-point">
-                <h3>{point.title}</h3>
-                <p>{point.copy}</p>
-              </article>
-            ))}
-          </div>
+          <p>
+            After all frontier waves are exhausted, <strong>bounded
+            reconsideration</strong> re-evaluates every discarded candidate
+            once — with the full accepted-asset set in context. Confidence
+            scores that were borderline at collection time may shift. Promoted
+            candidates seed exactly one additional wave; the run then closes.
+            No silent expansion, no unbounded recursion.
+          </p>
         </div>
         <div className="story-architecture-visual">
           <StoryArchitecturePipeline />

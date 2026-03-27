@@ -76,7 +76,7 @@ describeWithEmulator("Storage rules", () => {
     );
   });
 
-  it("denies artifact downloads to another user", async () => {
+  it("allows artifact downloads to another allowlisted user", async () => {
     await seedStorageArtifacts();
 
     const otherStorage = testEnv
@@ -86,7 +86,7 @@ describeWithEmulator("Storage rules", () => {
       })
       .storage();
 
-    await assertFails(
+    await assertSucceeds(
       otherStorage.ref("runs/run-1/results.json").getMetadata(),
     );
   });

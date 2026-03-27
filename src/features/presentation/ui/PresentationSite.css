@@ -383,7 +383,6 @@
 .story-proof-stage-copy > p:not(.eyebrow),
 .story-capability-band li,
 .story-problem-card p,
-.story-architecture-point p,
 .story-crop-copy > p:not(.eyebrow) {
   color: var(--muted);
   line-height: 1.65;
@@ -532,7 +531,6 @@
 
 .story-problem-card h3,
 .story-capability-band h3,
-.story-architecture-point h3,
 .story-proof-stage-copy h3,
 .story-card h3,
 .story-timeline-item h3 {
@@ -810,6 +808,107 @@
 
 .arch-node--store {
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+.arch-node--reconsider {
+  border-color: rgba(201, 155, 31, 0.32);
+  background: rgba(201, 155, 31, 0.06);
+}
+
+.arch-node--reconsider:hover {
+  border-color: rgba(201, 155, 31, 0.5);
+  background: rgba(201, 155, 31, 0.11);
+}
+
+.arch-node--reconsider .arch-node-tag {
+  color: rgba(201, 155, 31, 0.75);
+}
+
+.arch-node--reconsider .arch-node-name {
+  color: rgba(255, 240, 185, 0.9);
+}
+
+/* Dashed post-run connector */
+.arch-conn--dashed .arch-conn-track::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(201, 155, 31, 0.4) 0,
+    rgba(201, 155, 31, 0.4) 3px,
+    transparent 3px,
+    transparent 10px
+  );
+  animation: arch-flow-gold 1.8s linear infinite;
+}
+
+.arch-conn--dashed .arch-conn-label {
+  color: rgba(201, 155, 31, 0.45);
+}
+
+@keyframes arch-flow-gold {
+  to { transform: translateY(13px); }
+}
+
+/* Three-step horizontal mini-flow inside the reconsideration node */
+.arch-reconsider-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0;
+  align-items: center;
+  margin-top: 11px;
+}
+
+.arch-reconsider-step {
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(201, 155, 31, 0.18);
+  background: rgba(201, 155, 31, 0.07);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.arch-reconsider-step:hover {
+  background: rgba(201, 155, 31, 0.14);
+  border-color: rgba(201, 155, 31, 0.3);
+}
+
+.arch-reconsider-step-label {
+  display: block;
+  font: 700 0.68rem/1.2 "IBM Plex Mono", monospace;
+  color: rgba(255, 240, 185, 0.82);
+  margin-bottom: 3px;
+}
+
+.arch-reconsider-step-desc {
+  display: block;
+  font-size: 0.62rem;
+  line-height: 1.3;
+  color: rgba(201, 155, 31, 0.5);
+}
+
+.arch-reconsider-arrow {
+  font-size: 0.8rem;
+  color: rgba(201, 155, 31, 0.35);
+  text-align: center;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+.arch-reconsider-outcome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(201, 155, 31, 0.07);
+  border: 1px dashed rgba(201, 155, 31, 0.22);
+  font: 500 0.68rem/1.4 "IBM Plex Mono", monospace;
+  color: rgba(201, 155, 31, 0.68);
+}
+
+.arch-reconsider-outcome-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  color: rgba(201, 155, 31, 0.8);
 }
 
 .arch-node-header {
@@ -1095,25 +1194,6 @@
   font-size: 1.4rem;
 }
 
-.story-architecture-principles {
-  display: grid;
-  gap: 10px;
-}
-
-.story-architecture-point {
-  padding: 12px 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.story-architecture-point h3 {
-  margin: 0 0 4px;
-}
-
-.story-architecture-point p {
-  margin: 0;
-}
 
 .story-grid {
   display: grid;
@@ -1477,6 +1557,15 @@
 
   .arch-collector-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .arch-reconsider-steps {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .arch-reconsider-arrow {
+    display: none;
   }
 
   .story-walkthrough-step {

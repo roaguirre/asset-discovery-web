@@ -11,19 +11,9 @@ service firebase.storage {
         request.auth.token.email.matches('.*@zerofox\\.com$');
     }
 
-    function requestUidMatches(uid) {
-      return (request.auth.uid != null && request.auth.uid == uid) ||
-        (request.auth.token.user_id != null && request.auth.token.user_id == uid) ||
-        (request.auth.token.sub != null && request.auth.token.sub == uid);
-    }
-
-    function owner(uid) {
-      return signedIn() && allowlistedEmail() && requestUidMatches(uid);
-    }
-
     match /{artifactPrefix}/{runId}/{fileName} {
       allow read: if firestore.exists(/databases/(default)/documents/runs/$(runId)) &&
-        owner(firestore.get(/databases/(default)/documents/runs/$(runId)).data.owner_uid);
+        signedIn() && allowlistedEmail();
       allow write: if false;
     }
 

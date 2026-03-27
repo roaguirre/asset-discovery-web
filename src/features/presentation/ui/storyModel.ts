@@ -226,30 +226,31 @@ export const storyCapabilityGroups: CapabilityGroup[] = [
     title: "Collection Signals In Scope",
     tone: "paper",
     items: [
-      "crt.sh and RDAP registration signals",
-      "Web hints, sitemaps, and crawler output",
-      "ASN/CIDR and PTR frontier expansion",
-      "Wayback and AlienVault passive history",
+      "Certificate transparency (crt.sh), AlienVault OTX, Wayback archives",
+      "Active DNS variant sweeps across common TLDs",
+      "Web crawl, sitemap parsing, and security.txt extraction",
+      "RDAP registration lookups and reverse registration via CT",
+      "ASN/CIDR prefix enumeration with PTR reverse DNS pivots",
     ],
   },
   {
     title: "Trust Surfaces In Product",
     tone: "accent",
     items: [
-      "Pending pivot review with audit state",
-      "Grouped judge analysis with losing cases",
-      "Ownership state and inclusion reason on assets",
-      "Trace explorer for provenance and relations",
+      "LLM-gated ownership judgment on every cross-root candidate",
+      "Pending pivot review with confidence score and stated reasoning",
+      "Grouped judge analysis with accepted and discarded cases",
+      "Ownership state, inclusion reason, and trace on every asset",
     ],
   },
   {
     title: "Operational Delivery",
     tone: "ink",
     items: [
-      "Event-driven live run model",
+      "Event-driven live run model with resume checkpoints",
       "Manual and autonomous execution modes",
-      "JSON, CSV, and XLSX exports",
-      "DAG visualization for technical review",
+      "Post-run reconsideration of discarded candidates",
+      "JSON, CSV, and XLSX exports with full provenance",
     ],
   },
 ];
@@ -273,23 +274,23 @@ export const walkthroughSteps: WalkthroughStep[] = [
   {
     step: "2",
     phase: "Signal collection",
-    title: "Fan out across passive sources",
-    copy: "Collectors run in parallel: certificate transparency logs, DNS records, registrar data, web navigation hints, and network ranges. No active scanning, no noise introduced.",
-    signals: ["crt.sh", "RDAP", "DNS records", "web hints", "ASN / CIDR"],
+    title: "Fan out across passive archives and active signals",
+    copy: "Collectors run in parallel: certificate transparency logs, passive DNS archives, DNS variant sweeps across common TLDs, RDAP registration data, web crawling, sitemap parsing, and PTR reverse DNS from network ranges. Every cross-root result is judge-gated before it becomes a seed.",
+    signals: ["crt.sh", "AlienVault OTX", "DNS sweep", "RDAP", "ASN / CIDR", "web crawl"],
   },
   {
     step: "3",
-    phase: "AI-assisted pivot review",
+    phase: "LLM-gated pivot review",
     title: "Decide which roots to follow",
-    copy: "The judge scores each expansion candidate and flags ambiguous pivots for structured human review. Brand overlap, linked authentication, shared navigation — the reasoning is explicit before you commit.",
-    signals: ["confidence 0.94", "brand overlap", "subdomain follow-up", "accept / reject"],
+    copy: "An LLM evaluates each cross-root expansion candidate against the seed's company name, known domains, and industry context. Ownership confidence, decision kind, and stated reasoning are explicit before you commit. Ambiguous cases surface for human review.",
+    signals: ["LLM judge", "confidence 0.94", "brand overlap", "accept / reject"],
   },
   {
     step: "4",
     phase: "Frontier expansion",
     title: "Accepted pivots seed the next wave",
-    copy: "Each accepted pivot returns to the scheduler as a new frontier seed. The run expands without recursion — the same collector cannot revisit what it already proposed.",
-    signals: ["new frontier seed", "wave N+1", "acyclic expansion"],
+    copy: "Each accepted pivot returns to the scheduler as a new frontier seed. The scheduler dispatches a follow-up wave — up to two discovered frontiers beyond the initial seeds — without ever letting a collector recurse into what it already proposed.",
+    signals: ["new frontier seed", "wave N+1", "acyclic DAG"],
   },
   {
     step: "5",
@@ -301,31 +302,17 @@ export const walkthroughSteps: WalkthroughStep[] = [
 ];
 
 export const architectureCollectors = [
-  { label: "cert.sh", desc: "Certificate logs" },
-  { label: "DNS", desc: "Record resolution" },
-  { label: "Web hints", desc: "Navigation + content" },
-  { label: "RDAP", desc: "Registrar data" },
-  { label: "ASN / CIDR", desc: "Network ranges" },
-  { label: "Wayback", desc: "Passive history" },
+  { label: "crt.sh", desc: "Cert transparency" },
+  { label: "DNS sweep", desc: "Variants + records" },
+  { label: "Web crawl", desc: "Pages + cross-root links" },
+  { label: "RDAP", desc: "Registrar + ownership" },
+  { label: "ASN / CIDR", desc: "Network prefixes + PTR" },
+  { label: "AlienVault OTX", desc: "Passive DNS history" },
+  { label: "Wayback", desc: "Historical captures" },
+  { label: "Sitemaps", desc: "robots.txt + sitemap XML" },
+  { label: "Rev. registration", desc: "CT + RDAP overlap" },
 ];
 
-export const architecturePoints = [
-  {
-    title: "Scheduler-owned frontier expansion",
-    copy:
-      "Collectors and enrichers hand newly discovered seeds back to the engine instead of recursing into themselves.",
-  },
-  {
-    title: "Canonical assets plus raw provenance",
-    copy:
-      "Repeated sightings add evidence and relations without duplicating the canonical runtime asset set.",
-  },
-  {
-    title: "Bounded reconsideration",
-    copy:
-      "Discarded judge candidates can be revisited once with fuller context, which keeps the run ambitious without losing control.",
-  },
-];
 
 export const storyRun: LiveRunRecord = {
   id: "run-demo-2026-03-25",
