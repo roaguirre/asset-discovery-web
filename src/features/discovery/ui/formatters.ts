@@ -1,6 +1,23 @@
 import type { LiveAuthSession, LiveRunRecord } from "../core/types";
 
 /**
+ * formatTerminalTime renders a timestamp as HH:mm for compact terminal display.
+ */
+export function formatTerminalTime(value: string | undefined): string {
+  if (!value) return "---- -- -- --:--:--";
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return "---- -- -- --:--:--";
+  const d = new Date(parsed);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+}
+
+/**
  * formatDate renders exported timestamps using the user's locale while leaving
  * non-date strings untouched.
  */

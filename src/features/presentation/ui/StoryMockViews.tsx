@@ -7,10 +7,12 @@ import {
   PivotsView,
   type PivotPanelTab,
 } from "../../discovery/ui/views/PivotsView";
+import { ActivityTerminal } from "../../discovery/ui/views/ActivityView";
 import type { CapabilityGroup, StoryCrop } from "./storyModel";
 import {
   architecturePoints,
   storyAuditPivots,
+  storyEvents,
   storyJudgeSummary,
   storyPendingPivots,
   storyRun,
@@ -270,4 +272,12 @@ export function StoryTraceExplorerMock() {
       onOpenTrace={() => undefined}
     />
   );
+}
+
+/**
+ * StoryActivityMock renders the activity terminal directly — without the
+ * workspace panel wrapper — so it can be embedded in story crops.
+ */
+export function StoryActivityMock() {
+  return <ActivityTerminal events={storyEvents} />;
 }

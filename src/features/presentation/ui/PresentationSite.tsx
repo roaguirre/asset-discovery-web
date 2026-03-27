@@ -5,6 +5,7 @@ import {
   SurfaceTopbar,
 } from "../../../components/surface";
 import {
+  StoryActivityMock,
   StoryArchitectureDiagram,
   StoryArchitecturePrinciples,
   StoryCapabilityBand,
@@ -342,6 +343,17 @@ export function PresentationSite({
                   <StoryJudgeAnalysisMock />
                 </StoryCropFigure>
               );
+            } else if (block.crop === "activity-feed") {
+              surface = (
+                <StoryCropFigure
+                  crop={crop}
+                  tone="ink"
+                  className="is-proof-panel"
+                  captionMode="label-only"
+                >
+                  <StoryActivityMock />
+                </StoryCropFigure>
+              );
             } else {
               surface = (
                 <StoryCropFigure
@@ -373,7 +385,7 @@ export function PresentationSite({
       <section className="story-section story-capability-section" id="signals">
         <div className="story-section-header">
           <p className="eyebrow">Current Demo Scope</p>
-          <h2>The current repositories already cover the discovery loop, the review loop, and the delivery loop.</h2>
+          <h2>The demo already covers the discovery loop, the review loop, and the delivery loop.</h2>
           <p>
             Collection, review, traceability, and export delivery already land
             in the same working surface for this demo scope.

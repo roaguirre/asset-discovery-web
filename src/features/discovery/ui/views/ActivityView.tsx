@@ -1,6 +1,60 @@
-import { humanizeToken } from "../../core/assetTable";
-import { formatDate } from "../formatters";
+import { formatTerminalTime } from "../formatters";
 import type { LiveEventRecord } from "../../core/types";
+
+/**
+ * Maps an event kind token to a visual category used for colour-coding log rows.
+ */
+function logCategory(kind: string): string {
+  if (/complet|success|publish/.test(kind)) return "done";
+  if (/error|fail/.test(kind)) return "err";
+  if (/checkpoint/.test(kind)) return "step";
+  if (/observation|asset|added/.test(kind)) return "event";
+  return "info";
+}
+
+/**
+ * ActivityTerminal renders the dark terminal stream for a list of run events.
+ * Exported so it can be embedded standalone on the story surface without the
+ * panel wrapper that ActivityView adds for the authenticated workspace.
+ */
+export function ActivityTerminal({ events }: { events: LiveEventRecord[] }) {
+  return (
+    <div className="activity-terminal">
+      <header className="activity-terminal-bar">
+        <div className="activity-terminal-dots" aria-hidden>
+          <span />
+          <span />
+          <span />
+        </div>
+        <span className="activity-terminal-title">
+          <span>Activity Feed</span>
+          <span className="activity-terminal-count">
+            &nbsp;&mdash;&nbsp;{events.length} event
+            {events.length === 1 ? "" : "s"}
+          </span>
+        </span>
+      </header>
+      <div className="activity-log-stream" role="log" aria-live="polite">
+        {events.length === 0 ? (
+          <p className="activity-log-empty">awaiting events…</p>
+        ) : (
+          events.map((event) => (
+            <div
+              key={event.id}
+              className={`activity-log-row activity-log-row--${logCategory(event.kind)}`}
+            >
+              <span className="activity-log-time">
+                {formatTerminalTime(event.created_at)}
+              </span>
+              <span className="activity-log-kind">{event.kind}</span>
+              <span className="activity-log-msg">{event.message}</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 /**
  * ActivityView keeps run-event presentation isolated from the rest of the
@@ -9,34 +63,7 @@ import type { LiveEventRecord } from "../../core/types";
 export function ActivityView({ events }: { events: LiveEventRecord[] }) {
   return (
     <section className="panel view-panel">
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">Activity Feed</p>
-          <h2>
-            {events.length} recent event{events.length === 1 ? "" : "s"}
-          </h2>
-          <p className="panel-copy">
-            The feed stays isolated from assets, pivots, and trace so the main
-            workspace can stay focused.
-          </p>
-        </div>
-      </div>
-      <div className="activity-list">
-        {events.map((event) => (
-          <article key={event.id} className="activity-item">
-            <span className="status-pill subtle">
-              {humanizeToken(event.kind, event.kind)}
-            </span>
-            <strong>{event.message}</strong>
-            <span>{formatDate(event.created_at)}</span>
-          </article>
-        ))}
-        {events.length === 0 ? (
-          <p className="empty-copy">
-            Run events will appear here once execution begins.
-          </p>
-        ) : null}
-      </div>
+      <ActivityTerminal events={events} />
     </section>
   );
 }

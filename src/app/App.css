@@ -1668,6 +1668,108 @@ body {
   overflow: auto;
 }
 
+/* ── Terminal stream (Activity Feed) ─────────────────────────────────── */
+
+.activity-terminal {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 25, 16, 0.14);
+}
+
+.activity-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #221a11;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.activity-terminal-dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.activity-terminal-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.activity-terminal-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  color: rgba(200, 184, 154, 0.45);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-log-stream {
+  background: #181210;
+  padding: 10px 0;
+  max-height: 600px;
+  overflow-y: auto;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-log-row {
+  display: grid;
+  grid-template-columns: 20ch minmax(0, 22ch) 1fr;
+  gap: 14px;
+  padding: 3px 16px;
+  align-items: baseline;
+  line-height: 1.55;
+  transition: background 80ms;
+}
+
+.activity-log-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.activity-log-time {
+  color: #3e342a;
+  white-space: nowrap;
+  font-size: 0.72rem;
+}
+
+.activity-log-kind {
+  color: #6a5c4e;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-log-msg {
+  color: #c8b89a;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Kind-specific kind-label colours */
+.activity-log-row--done .activity-log-kind { color: #3a8a5a; }
+.activity-log-row--done .activity-log-time { color: #2e5c3e; }
+.activity-log-row--err .activity-log-kind  { color: #b84040; }
+.activity-log-row--err .activity-log-msg   { color: #e8b4a8; }
+.activity-log-row--step .activity-log-kind { color: #b06030; }
+.activity-log-row--event .activity-log-kind { color: #4a7fa8; }
+
+.activity-log-empty {
+  padding: 14px 16px;
+  color: #3e342a;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  margin: 0;
+}
+
 .empty-panel {
   min-height: 280px;
   display: grid;
@@ -1870,5 +1972,27 @@ body {
 
   .run-selector-item-meta {
     grid-auto-flow: row;
+  }
+
+  /* Terminal log: stack kind→message→time vertically at narrow widths */
+  .activity-log-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .activity-log-kind {
+    order: 1;
+  }
+
+  .activity-log-msg {
+    order: 2;
+  }
+
+  .activity-log-time {
+    order: 3;
+    font-size: 0.66rem;
   }
 }

@@ -9,6 +9,7 @@
   overflow: auto;
   padding: calc(var(--story-topbar-offset) + 28px) 28px 52px;
   scroll-behavior: smooth;
+  scroll-padding-top: var(--story-topbar-offset);
   background:
     linear-gradient(180deg, rgba(255, 250, 244, 0.9), rgba(252, 246, 238, 0.98)),
     radial-gradient(circle at top right, rgba(216, 76, 31, 0.07), transparent 32%);
@@ -704,10 +705,10 @@
 
 .story-flow-node {
   display: grid;
-  gap: 8px;
-  min-height: 108px;
-  padding: 18px;
-  border-radius: 22px;
+  gap: 6px;
+  min-height: 76px;
+  padding: 12px 14px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -722,8 +723,9 @@
 }
 
 .story-flow-node strong {
-  font-size: 1.02rem;
+  font-size: 0.95rem;
   line-height: 1.18;
+  margin: 0;
 }
 
 .story-flow-node.is-accent {
@@ -740,14 +742,22 @@
 
 .story-architecture-principles {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .story-architecture-point {
-  padding: 18px 20px;
-  border-radius: 22px;
+  padding: 12px 16px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
+}
+
+.story-architecture-point h3 {
+  margin: 0 0 4px;
+}
+
+.story-architecture-point p {
+  margin: 0;
 }
 
 .story-grid {

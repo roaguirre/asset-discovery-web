@@ -1,5 +1,6 @@
 import type {
   LiveAssetRow,
+  LiveEventRecord,
   LiveJudgeSummary,
   LivePivotRecord,
   LiveRunRecord,
@@ -10,7 +11,8 @@ export type StoryCropKey =
   | "run-overview"
   | "pivot-review"
   | "judge-analysis"
-  | "trace-explorer";
+  | "trace-explorer"
+  | "activity-feed";
 
 export type StoryCrop = {
   key: StoryCropKey;
@@ -114,6 +116,70 @@ export const storyCrops: StoryCrop[] = [
     caption:
       "Contributors, sections, tree nodes, and related assets make the run answer why something belongs here.",
   },
+  {
+    key: "activity-feed",
+    label: "Activity Feed",
+    title: "Every run step is observable as it happens.",
+    caption:
+      "Checkpoint events, collection signals, and enrichment results stream in real time so observers stay in sync without waiting for completion.",
+  },
+];
+
+export const storyEvents: LiveEventRecord[] = [
+  {
+    id: "evt-1",
+    kind: "run_started",
+    message: "Run run-demo-2026-03-25 started with 4 seeds.",
+    created_at: "2026-03-25T13:01:10Z",
+  },
+  {
+    id: "evt-2",
+    kind: "checkpoint",
+    message: "Reached after_collection_wave at wave 0.",
+    created_at: "2026-03-25T13:03:22Z",
+  },
+  {
+    id: "evt-3",
+    kind: "observation_added",
+    message: "Recorded 3 observations from crt.sh for example-app.com.",
+    created_at: "2026-03-25T13:04:18Z",
+  },
+  {
+    id: "evt-4",
+    kind: "observation_added",
+    message: "Recorded 1 observation from rdap_collector for example-app.com.",
+    created_at: "2026-03-25T13:04:21Z",
+  },
+  {
+    id: "evt-5",
+    kind: "checkpoint",
+    message: "Reached after_reconsideration at wave 0.",
+    created_at: "2026-03-25T13:07:45Z",
+  },
+  {
+    id: "evt-6",
+    kind: "checkpoint",
+    message: "Reached after_collection_wave at wave 1.",
+    created_at: "2026-03-25T13:11:30Z",
+  },
+  {
+    id: "evt-7",
+    kind: "observation_added",
+    message: "Recorded 7 judge outcomes from dns_collector for portal.example-app.com.",
+    created_at: "2026-03-25T13:14:02Z",
+  },
+  {
+    id: "evt-8",
+    kind: "artifacts_published",
+    message: "Published result artifacts for run run-demo-2026-03-25.",
+    created_at: "2026-03-25T13:22:00Z",
+  },
+  {
+    id: "evt-9",
+    kind: "run_completed",
+    message: "Run run-demo-2026-03-25 completed with 29 asset(s).",
+    created_at: "2026-03-25T13:22:05Z",
+  },
 ];
 
 export const storyObservationBlocks: ObservationBlock[] = [
@@ -143,6 +209,15 @@ export const storyObservationBlocks: ObservationBlock[] = [
       "Analysts do not have to reconstruct provenance from memory. The trace view keeps the decision chain, supporting evidence, and adjacent assets connected to the record.",
     crop: "trace-explorer",
     side: "right",
+  },
+  {
+    id: "activity-feed",
+    eyebrow: "Live Execution",
+    title: "Every run step is observable as it happens.",
+    copy:
+      "The activity feed streams checkpoint events, collection signals, and enrichment results in real time, keeping observers in sync with the run without waiting for completion.",
+    crop: "activity-feed",
+    side: "left",
   },
 ];
 
