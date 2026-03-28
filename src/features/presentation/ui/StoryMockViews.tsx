@@ -85,6 +85,7 @@ export function StoryProofStage({
   copy,
   side,
   className,
+  dataReveal,
   children,
 }: {
   eyebrow: string;
@@ -92,6 +93,7 @@ export function StoryProofStage({
   copy: string;
   side: "left" | "right";
   className?: string;
+  dataReveal?: string;
   children: ReactNode;
 }) {
   const classes = [
@@ -103,7 +105,7 @@ export function StoryProofStage({
     .join(" ");
 
   return (
-    <article className={classes}>
+    <article className={classes} data-reveal={dataReveal}>
       <div className="story-proof-stage-copy">
         <p className="eyebrow">{eyebrow}</p>
         <h3>{title}</h3>
@@ -141,7 +143,7 @@ export function StoryCapabilityBand({ group }: { group: CapabilityGroup }) {
  */
 export function StoryArchitecturePipeline() {
   return (
-    <div className="arch-pipeline" aria-label="Discovery system architecture pipeline">
+    <div className="arch-pipeline" aria-label="Discovery system architecture pipeline" data-reveal="stagger">
 
       {/* Seeds */}
       <div className="arch-node arch-node--seeds">

@@ -1597,10 +1597,214 @@
   }
 
   .story-brand-lockup.is-compact .story-brand {
-    max-width: 8.6rem;
+    display: none;
   }
 
   .story-crop.has-hidden-caption .story-crop-visual {
     padding-top: 18px;
+  }
+}
+
+/* ── Scroll progress bar ─────────────────────────────────────────────── */
+
+.story-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100;
+  background: linear-gradient(90deg, var(--accent), #c98615);
+  transform-origin: left center;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+
+/* ── Active nav indicator ────────────────────────────────────────────── */
+
+.story-nav a {
+  position: relative;
+  transition: color 200ms ease;
+}
+
+.story-nav a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  transform: scaleX(0);
+  transition: transform 200ms ease;
+}
+
+.story-nav a.is-active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.story-nav a.is-active::after {
+  transform: scaleX(1);
+}
+
+.story-drawer-link.is-active {
+  border-color: rgba(216, 76, 31, 0.3);
+  background: rgba(216, 76, 31, 0.06);
+}
+
+/* ── Scroll reveal system ────────────────────────────────────────────── */
+
+[data-reveal] {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+[data-reveal="fade-up"] {
+  transform: translateY(24px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+[data-reveal="slide-left"] {
+  transform: translateX(-32px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+[data-reveal="slide-right"] {
+  transform: translateX(32px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Stagger: parent stays visible, children animate in with increasing delay */
+[data-reveal="stagger"] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+  will-change: auto;
+}
+
+[data-reveal="stagger"] > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+[data-reveal="stagger"].is-visible > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal="stagger"].is-visible > :nth-child(1) { transition-delay: 0s; }
+[data-reveal="stagger"].is-visible > :nth-child(2) { transition-delay: 0.08s; }
+[data-reveal="stagger"].is-visible > :nth-child(3) { transition-delay: 0.16s; }
+[data-reveal="stagger"].is-visible > :nth-child(4) { transition-delay: 0.24s; }
+[data-reveal="stagger"].is-visible > :nth-child(5) { transition-delay: 0.32s; }
+
+/* Architecture pipeline extended stagger (nodes + connectors) */
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(6) { transition-delay: 0.40s; }
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(7) { transition-delay: 0.48s; }
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(8) { transition-delay: 0.56s; }
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(9) { transition-delay: 0.64s; }
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(10) { transition-delay: 0.72s; }
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(11) { transition-delay: 0.80s; }
+.arch-pipeline[data-reveal="stagger"].is-visible > :nth-child(12) { transition-delay: 0.88s; }
+
+/* ── Sticky CTA ──────────────────────────────────────────────────────── */
+
+.story-sticky-cta {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 80;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 999px;
+  color: #fffaf3;
+  background: linear-gradient(135deg, #d84c1f, #c98615);
+  box-shadow: 0 8px 24px rgba(216, 76, 31, 0.32);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: sticky-cta-enter 0.3s ease-out forwards;
+}
+
+@keyframes sticky-cta-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.story-sticky-cta:hover {
+  box-shadow: 0 12px 32px rgba(216, 76, 31, 0.42);
+  transform: translateY(-2px);
+}
+
+/* ── Enhanced hover states ───────────────────────────────────────────── */
+
+.story-crop.is-interactive {
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.story-crop.is-interactive:hover {
+  transform: scale(1.005);
+  border-color: rgba(216, 76, 31, 0.2);
+  box-shadow:
+    0 0 0 3px rgba(216, 76, 31, 0.06),
+    0 22px 60px rgba(73, 44, 15, 0.14);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .story-scroll-progress {
+    display: none;
+  }
+
+  [data-reveal],
+  [data-reveal="stagger"] > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .story-sticky-cta {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .story-sticky-cta:hover {
+    transform: none;
+  }
+
+  .story-crop.is-interactive:hover {
+    transform: none;
+  }
+
+  .arch-node-pulse,
+  .arch-conn-track::before {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .story-sticky-cta {
+    bottom: 16px;
+    right: 16px;
+    padding: 10px 16px;
+    font-size: 0.88rem;
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   SurfaceDrawerOverlay,
   SurfaceDrawerToggleButton,
@@ -63,6 +63,175 @@ function cropFor(key: StoryCrop["key"]) {
   return storyCropMap.get(key) as StoryCrop;
 }
 
+/* ── Scroll-driven hooks ─────────────────────────────────────────────── */
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/**
+ * One-shot IntersectionObserver that adds `.is-visible` to every element
+ * carrying a `data-reveal` attribute once it enters the scroll container.
+ */
+function useScrollReveal(shellRef: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const targets = shell.querySelectorAll<HTMLElement>("[data-reveal]");
+
+    if (prefersReducedMotion()) {
+      targets.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { root: shell, rootMargin: "0px 0px -60px 0px", threshold: 0.1 },
+    );
+
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [shellRef]);
+}
+
+/**
+ * Thin progress bar driven by the scroll position of the shell container.
+ * Updates are throttled to animation frames for paint-aligned performance.
+ */
+function useScrollProgress(
+  shellRef: RefObject<HTMLElement | null>,
+  barRef: RefObject<HTMLElement | null>,
+) {
+  useEffect(() => {
+    const shell = shellRef.current;
+    const bar = barRef.current;
+    if (!shell || !bar) return;
+    if (prefersReducedMotion()) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const progress = shell.scrollTop / (shell.scrollHeight - shell.clientHeight || 1);
+        bar.style.transform = `scaleX(${progress})`;
+      });
+    };
+
+    shell.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      shell.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [shellRef, barRef]);
+}
+
+const sectionAnchors = ["#promise", "#walkthrough", "#architecture", "#open-source"];
+
+/**
+ * Tracks which navigation anchor occupies the vertical center of the scroll
+ * container so the topbar can highlight the active section.
+ */
+function useActiveSection(shellRef: RefObject<HTMLElement | null>): string {
+  const [activeHref, setActiveHref] = useState("");
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const sectionEls = sectionAnchors
+      .map((href) => shell.querySelector<HTMLElement>(href))
+      .filter(Boolean) as HTMLElement[];
+
+    if (sectionEls.length === 0) return;
+
+    const visibilityMap = new Map<Element, boolean>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          visibilityMap.set(entry.target, entry.isIntersecting);
+        }
+        const firstVisible = sectionEls.find((el) => visibilityMap.get(el));
+        setActiveHref(firstVisible ? `#${firstVisible.id}` : "");
+      },
+      { root: shell, rootMargin: "-50% 0px -50% 0px", threshold: 0 },
+    );
+
+    sectionEls.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [shellRef]);
+
+  return activeHref;
+}
+
+/**
+ * Counts `.stat-card strong` numeric values from 0 to their target once the
+ * container scrolls into view. DOM-imperative to avoid touching shared
+ * StatCard / RunOverviewPanel components.
+ */
+function useAnimateStatCards(containerRef: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (typeof IntersectionObserver === "undefined") return;
+    if (prefersReducedMotion()) return;
+
+    const statEls = container.querySelectorAll<HTMLElement>(".stat-card strong");
+    const targets = new Map<HTMLElement, number>();
+
+    statEls.forEach((el) => {
+      const num = parseInt(el.textContent ?? "", 10);
+      if (!isNaN(num) && num > 0) {
+        targets.set(el, num);
+        el.textContent = "0";
+      }
+    });
+
+    if (targets.size === 0) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        observer.disconnect();
+
+        const duration = 900;
+        const start = performance.now();
+
+        function tick(now: number) {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          targets.forEach((target, el) => {
+            el.textContent = String(Math.round(target * eased));
+          });
+          if (progress < 1) requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+      },
+      { threshold: 0.3 },
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [containerRef]);
+}
+
+/* ── Component ───────────────────────────────────────────────────────── */
+
 /**
  * PresentationSite is the public story-first landing surface for the demo. It
  * frames the live workspace as an editorial proof document before the audience
@@ -73,15 +242,23 @@ export function PresentationSite({
   onOpenWorkspace,
   onSignInToWorkspace,
 }: PresentationSiteProps) {
+  const shellRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const heroMontageRef = useRef<HTMLDivElement>(null);
   const [compactViewport, setCompactViewport] = useState(() =>
     isCompactStoryViewport(),
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const primaryActionLabel = sessionActive
-    ? "Open Live Workspace"
-    : "Sign In For Live Demo";
+    ? "Open Workspace"
+    : "Sign In";
   const primaryAction = sessionActive ? onOpenWorkspace : onSignInToWorkspace;
   const drawerToggleLabel = drawerOpen ? "Close navigation" : "Open navigation";
+
+  useScrollReveal(shellRef);
+  useScrollProgress(shellRef, progressRef);
+  const activeHref = useActiveSection(shellRef);
+  useAnimateStatCards(heroMontageRef);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
@@ -108,7 +285,8 @@ export function PresentationSite({
     : "story-topbar";
 
   return (
-    <main className="story-shell" id="top">
+    <main className="story-shell" id="top" ref={shellRef}>
+      <div className="story-scroll-progress" ref={progressRef} aria-hidden="true" />
       <div className="story-orbit story-orbit-one" aria-hidden="true" />
       <div className="story-orbit story-orbit-two" aria-hidden="true" />
 
@@ -148,7 +326,11 @@ export function PresentationSite({
           compactViewport ? null : (
             <nav className="story-nav" aria-label="Presentation sections">
               {storyNavigationLinks.map((link) => (
-                <a key={link.href} href={link.href}>
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={activeHref === link.href ? "is-active" : undefined}
+                >
                   {link.label}
                 </a>
               ))}
@@ -215,7 +397,11 @@ export function PresentationSite({
               {storyNavigationLinks.map((link) => (
                 <a
                   key={link.href}
-                  className="story-drawer-link"
+                  className={
+                    activeHref === link.href
+                      ? "story-drawer-link is-active"
+                      : "story-drawer-link"
+                  }
                   href={link.href}
                   onClick={() => setDrawerOpen(false)}
                 >
@@ -251,7 +437,7 @@ export function PresentationSite({
         </SurfaceDrawerOverlay>
       ) : null}
 
-      <section className="story-hero">
+      <section className="story-hero" data-reveal="fade-up">
         <div className="story-hero-copy">
           <h1>Asset discovery should expand coverage without asking the team to trust a black box.</h1>
           <p className="story-summary">
@@ -273,7 +459,7 @@ export function PresentationSite({
           </div>
         </div>
 
-        <div className="story-hero-montage">
+        <div className="story-hero-montage" ref={heroMontageRef}>
           <StoryCropFigure
             crop={cropFor("run-overview")}
             className="is-overview"
@@ -296,7 +482,7 @@ export function PresentationSite({
               decide what deserves trust and follow-up.
             </p>
           </div>
-          <div className="story-problem-list">
+          <div className="story-problem-list" data-reveal="stagger">
             {storyProblemPoints.map((point) => (
               <article key={point.title} className="story-problem-card">
                 <h3>{point.title}</h3>
@@ -308,7 +494,7 @@ export function PresentationSite({
       </section>
 
       <section className="story-section story-evidence-section" id="promise">
-        <div className="story-section-header">
+        <div className="story-section-header" data-reveal="fade-up">
           <p className="eyebrow">Evidence</p>
           <h2>What becomes visible when discovery has to justify itself.</h2>
           <p>
@@ -386,6 +572,7 @@ export function PresentationSite({
                 title={block.title}
                 copy={block.copy}
                 side={block.side}
+                dataReveal={block.side === "right" ? "slide-right" : "slide-left"}
               >
                 {surface}
               </StoryProofStage>
@@ -403,7 +590,7 @@ export function PresentationSite({
             in the same working surface for this demo scope.
           </p>
         </div>
-        <div className="story-capability-grid">
+        <div className="story-capability-grid" data-reveal="stagger">
           {storyCapabilityGroups.map((group) => (
             <StoryCapabilityBand key={group.title} group={group} />
           ))}
@@ -412,7 +599,7 @@ export function PresentationSite({
 
       <section className="story-section story-walkthrough-section" id="walkthrough">
         <div className="story-walkthrough-layout">
-          <div className="story-walkthrough-intro">
+          <div className="story-walkthrough-intro" data-reveal="fade-up">
             <p className="eyebrow">OSINT Workflow</p>
             <h2>From seed to surface in a single traceable run.</h2>
             <p>
@@ -422,8 +609,13 @@ export function PresentationSite({
             </p>
           </div>
           <ol className="story-walkthrough-flow">
-            {walkthroughSteps.map((step) => (
-              <li key={step.step} className="story-walkthrough-step">
+            {walkthroughSteps.map((step, index) => (
+              <li
+                key={step.step}
+                className="story-walkthrough-step"
+                data-reveal="fade-up"
+                style={{ transitionDelay: `${index * 0.1}s` }}
+              >
                 <div className="story-step-marker">
                   <span className="story-step-num">{step.step}</span>
                 </div>
@@ -446,7 +638,7 @@ export function PresentationSite({
       </section>
 
       <section className="story-architecture-band" id="architecture">
-        <div className="story-architecture-copy">
+        <div className="story-architecture-copy" data-reveal="fade-up">
           <p className="eyebrow">System Design</p>
           <h2>Every pivot is an explicit decision. Discovery stays bounded by design.</h2>
           <p>
@@ -470,7 +662,7 @@ export function PresentationSite({
       </section>
 
       <section className="story-section" id="open-source">
-        <div className="story-section-header">
+        <div className="story-section-header" data-reveal="fade-up">
           <p className="eyebrow">Open Source Repositories</p>
           <h2>The demo is split into frontend and backend repositories you can inspect directly.</h2>
           <p>
@@ -478,7 +670,7 @@ export function PresentationSite({
             workspace and discovery engine used throughout the demo.
           </p>
         </div>
-        <div className="story-grid story-grid-two">
+        <div className="story-grid story-grid-two" data-reveal="stagger">
           {storyRepositories.map((repository) => (
             <a
               key={repository.name}
@@ -502,7 +694,7 @@ export function PresentationSite({
         </div>
       </section>
 
-      <section className="story-final">
+      <section className="story-final" data-reveal="fade-up">
         <div>
           <p className="eyebrow">Closing Claim</p>
           <h2>Comprehensiveness matters more when the reasoning is visible.</h2>
@@ -525,6 +717,7 @@ export function PresentationSite({
           </a>
         </div>
       </section>
+
     </main>
   );
 }

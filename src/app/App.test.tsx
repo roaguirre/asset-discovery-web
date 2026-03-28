@@ -281,7 +281,7 @@ describe("App", () => {
     );
     expect(
       within(storyTopbar as HTMLElement).getByRole("button", {
-        name: "Sign In For Live Demo",
+        name: "Sign In",
       }),
     ).toBeVisible();
     expect(
@@ -310,7 +310,7 @@ describe("App", () => {
     ).toBeNull();
 
     await user.click(
-      screen.getAllByRole("button", { name: "Sign In For Live Demo" })[0],
+      screen.getAllByRole("button", { name: "Sign In" })[0],
     );
 
     await waitFor(() =>
@@ -345,7 +345,7 @@ describe("App", () => {
     ).toBeVisible();
     expect(
       within(storyTopbar as HTMLElement).getByRole("button", {
-        name: "Sign In For Live Demo",
+        name: "Sign In",
       }),
     ).toBeVisible();
     expect(
