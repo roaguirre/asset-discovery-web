@@ -56,6 +56,8 @@ const sourceDescriptions = Object.freeze({
   alienvault_collector: "Passive DNS observations from AlienVault OTX.",
   web_hint_collector:
     "Ownership hints mined from the target website and security.txt references.",
+  ai_search_collector:
+    "LLM-assisted web search expansion that proposes candidate roots before ownership judging.",
   sitemap_collector:
     "Hosts and judged cross-root candidates discovered from robots.txt and sitemap documents.",
   reverse_registration_collector:
