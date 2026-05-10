@@ -31,6 +31,31 @@ export type ObservationBlock = {
   side: "left" | "right";
 };
 
+export type AISearchStage = {
+  title: string;
+  copy: string;
+  chips: string[];
+};
+
+export type AISearchExampleStatus = "accepted" | "pending_review" | "discarded";
+
+export type AISearchExample = {
+  root: string;
+  status: AISearchExampleStatus;
+  collector: string;
+  note: string;
+};
+
+export type AISearchSectionModel = {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  detail: string;
+  footnote: string;
+  stages: AISearchStage[];
+  examples: AISearchExample[];
+};
+
 export type CapabilityGroup = {
   title: string;
   items: string[];
@@ -172,18 +197,24 @@ export const storyEvents: LiveEventRecord[] = [
   },
   {
     id: "evt-7",
-    kind: "observation_added",
-    message: "Recorded 7 judge outcomes from web_hint_collector for exampleapp.io.",
+    kind: "ai_search_candidates_selected",
+    message: "AI search collector selected 2 candidate roots for judging for example-app.com.",
     created_at: "2026-03-25T13:14:02Z",
   },
   {
     id: "evt-8",
+    kind: "observation_added",
+    message: "Recorded 4 judge outcomes from ai_search_collector for example-app.com.",
+    created_at: "2026-03-25T13:15:10Z",
+  },
+  {
+    id: "evt-9",
     kind: "artifacts_published",
     message: "Published result artifacts for run run-demo-2026-03-25.",
     created_at: "2026-03-25T13:22:00Z",
   },
   {
-    id: "evt-9",
+    id: "evt-10",
     kind: "run_completed",
     message: "Run run-demo-2026-03-25 completed with 29 asset(s).",
     created_at: "2026-03-25T13:22:05Z",
@@ -248,6 +279,7 @@ export const storyCapabilityGroups: CapabilityGroup[] = [
       "Web crawl, sitemap parsing, and security.txt extraction",
       "RDAP registration lookups and reverse registration via CT",
       "ASN/CIDR prefix enumeration with PTR reverse DNS pivots",
+      "Post-enrichment AI search with strict structured output and cited candidate roots",
     ],
   },
   {
@@ -256,6 +288,7 @@ export const storyCapabilityGroups: CapabilityGroup[] = [
     items: [
       "LLM-gated ownership judgment on every cross-root candidate",
       "Pending pivot review with confidence score and stated reasoning",
+      "Accepted pivots become visible assets only after acceptance",
       "Grouped judge analysis with accepted and discarded cases",
       "Ownership state, inclusion reason, and trace on every asset",
     ],
@@ -271,6 +304,59 @@ export const storyCapabilityGroups: CapabilityGroup[] = [
     ],
   },
 ];
+
+export const storyAISearchSection: AISearchSectionModel = {
+  eyebrow: "AI Search Expander",
+  title: "Search-backed expansion stays bounded by the same decision loop.",
+  intro:
+    "After enrichment, the run knows more than the original seed: accepted roots, discarded roots, DNS overlap, PTR-derived hosts, and corroborated RDAP details. The AI search expander packages that run state into a bounded search request instead of asking the model to improvise from the seed alone.",
+  detail:
+    "The search step returns strict structured output with cited registrable-domain candidates. Those candidates still go through the same ownership judge and pivot review workflow as any other cross-root expansion. Accepted pivots become visible assets and frontier seeds; pending or rejected pivots remain reviewable evidence instead of silently widening scope.",
+  footnote:
+    "The step is intentionally post-enrichment, citation-backed, and capped before it can affect the frontier.",
+  stages: [
+    {
+      title: "Run Context",
+      copy:
+        "Seed facts are combined with the current run state: accepted roots, discarded roots, DNS and RDAP overlap, PTR-derived hosts, and already-known assets.",
+      chips: ["post-enrichment", "accepted + discarded roots", "DNS / RDAP facts"],
+    },
+    {
+      title: "Web Search + Structured Output",
+      copy:
+        "The model searches the web for registrable roots only and returns strict structured output with summaries and source URLs instead of free-form prose.",
+      chips: ["strict schema", "cited evidence", "registrable roots only"],
+    },
+    {
+      title: "Ownership Judge",
+      copy:
+        "Search candidates go through the same ownership policy as collector candidates, with confidence, decision kind, and reasoning preserved for inspection.",
+      chips: ["confidence + reason", "same judge policy", "bounded candidates"],
+    },
+    {
+      title: "Accepted Pivot / Pending Review",
+      copy:
+        "Only accepted pivots become visible assets and next-wave seeds. Mixed or ambiguous cases stay in explicit review instead of leaking into the asset inventory.",
+      chips: ["visible assets after acceptance", "manual review when needed", "new frontier seed"],
+    },
+  ],
+  examples: [
+    {
+      root: "exampleapp.io",
+      status: "accepted",
+      collector: "ai_search_collector",
+      note:
+        "Cited product and company results align with the current run context, so the root is accepted and returned to the scheduler as a visible pivot.",
+    },
+    {
+      root: "exampleapp-status.co",
+      status: "pending_review",
+      collector: "ai_search_collector",
+      note:
+        "Search found brand-adjacent evidence, but mixed hosting and ownership signals keep the root in review instead of surfacing it as an asset.",
+    },
+  ],
+};
 
 export type WalkthroughStep = {
   step: string;
@@ -292,25 +378,39 @@ export const walkthroughSteps: WalkthroughStep[] = [
     step: "2",
     phase: "Signal collection",
     title: "Fan out across passive archives and active signals",
-    copy: "Collectors run in parallel: certificate transparency logs, passive DNS archives, DNS variant sweeps across common TLDs, RDAP registration data, web crawling, sitemap parsing, and PTR reverse DNS from network ranges. Every cross-root result is judge-gated before it becomes a seed.",
+    copy: "Collectors run in parallel: certificate transparency logs, passive DNS archives, DNS variant sweeps across common TLDs, RDAP registration data, web crawling, sitemap parsing, and PTR reverse DNS from network ranges. Every signal stays attributable to the seed and the collector that surfaced it.",
     signals: ["crt.sh", "AlienVault OTX", "DNS sweep", "RDAP", "ASN / CIDR", "web crawl"],
   },
   {
     step: "3",
-    phase: "LLM-gated pivot review",
-    title: "Decide which roots to follow",
-    copy: "An LLM evaluates each cross-root expansion candidate against the seed's company name, known domains, and industry context. Ownership confidence, decision kind, and stated reasoning are explicit before you commit. Ambiguous cases surface for human review.",
-    signals: ["LLM judge", "confidence 0.94", "brand overlap", "accept / reject"],
+    phase: "Enrichment",
+    title: "Turn raw signals into run context",
+    copy: "Domain and IP enrichers add DNS, PTR, RDAP, and provider context. That enriched run state sharpens which cross-root candidates deserve follow-up and which should remain weak evidence.",
+    signals: ["DNS context", "PTR", "RDAP", "provider overlap"],
   },
   {
     step: "4",
-    phase: "Frontier expansion",
-    title: "Accepted pivots seed the next wave",
-    copy: "Each accepted pivot returns to the scheduler as a new frontier seed. The scheduler dispatches a follow-up wave — up to two discovered frontiers beyond the initial seeds — without ever letting a collector recurse into what it already proposed.",
-    signals: ["new frontier seed", "wave N+1", "acyclic DAG"],
+    phase: "AI search expansion",
+    title: "Search for cited registrable roots with the run in context",
+    copy: "After enrichment, a bounded AI search step uses the seed plus current run facts to find cited candidate roots. The model returns structured output rather than open-ended suggestions.",
+    signals: ["post-enrichment", "strict schema", "cited roots", "bounded search"],
   },
   {
     step: "5",
+    phase: "LLM-gated pivot review",
+    title: "Decide which roots to follow",
+    copy: "Collector candidates and AI-search candidates both go through the same ownership judge. Confidence, decision kind, and stated reasoning are explicit before the frontier changes. Ambiguous cases surface for human review.",
+    signals: ["LLM judge", "confidence 0.94", "brand overlap", "accept / reject"],
+  },
+  {
+    step: "6",
+    phase: "Frontier expansion",
+    title: "Accepted pivots seed the next wave",
+    copy: "Each accepted pivot returns to the scheduler as a new frontier seed. The scheduler dispatches follow-up waves — up to three discovered frontiers beyond the initial seeds — without ever letting a collector recurse into what it already proposed.",
+    signals: ["new frontier seed", "wave N+1", "max 3 discovered frontiers"],
+  },
+  {
+    step: "7",
     phase: "Provenance and delivery",
     title: "Trace every asset and export with attribution",
     copy: "The trace view connects each asset to its origin signal, collector, judge outcome, and review decision. Export with full lineage intact — recipients can inspect the reasoning themselves.",

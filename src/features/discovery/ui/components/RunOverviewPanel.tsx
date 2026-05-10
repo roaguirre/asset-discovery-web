@@ -37,27 +37,47 @@ export function RunOverviewPanel({
         </span>
       </div>
       <div className="stat-grid">
-        <StatCard label="Mode" value={humanizeToken(run.mode, "n/a")} />
-        <StatCard label="Wave" value={String(run.current_wave)} />
-        <StatCard label="Assets" value={String(run.asset_count)} />
-        <StatCard label="Seeds" value={String(run.seed_count)} />
+        <StatCard
+          label="Mode"
+          value={humanizeToken(run.mode, "n/a")}
+          tooltip="How pivots are applied — manual holds each recommendation for human sign-off; automatic applies them immediately."
+        />
+        <StatCard
+          label="Wave"
+          value={String(run.current_wave)}
+          tooltip="Current discovery wave. Each wave expands the graph one hop outward from accepted assets."
+        />
+        <StatCard
+          label="Assets"
+          value={String(run.asset_count)}
+          tooltip="Total unique assets found across all waves of this run, including seeds."
+        />
+        <StatCard
+          label="Seeds"
+          value={String(run.seed_count)}
+          tooltip="Known starting points used to bootstrap the discovery graph for this run."
+        />
         <StatCard
           label="Enumerations"
           value={String(run.enumeration_count)}
+          tooltip="Enumeration tasks completed to expand the asset graph — DNS, certificate, and IP lookups combined."
         />
         <StatCard
           label="Judge Accepted"
           value={String(run.judge_accepted_count ?? judgeSummary.accepted_count)}
+          tooltip="Assets the ownership judge classified as in-scope and added to the active inventory."
         />
         <StatCard
           label="Judge Discarded"
           value={String(
             run.judge_discarded_count ?? judgeSummary.discarded_count,
           )}
+          tooltip="Assets the ownership judge classified as out-of-scope and excluded from the inventory."
         />
         <StatCard
           label="Pending Pivots"
           value={String(run.pending_pivot_count)}
+          tooltip="Expansion pivots awaiting human review before the next wave can proceed."
         />
       </div>
       <div className="run-overview-footer">

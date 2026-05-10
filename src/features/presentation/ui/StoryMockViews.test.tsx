@@ -1,6 +1,10 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { StoryCropFigure, StoryProofStage } from "./StoryMockViews";
+import {
+  StoryArchitecturePipeline,
+  StoryCropFigure,
+  StoryProofStage,
+} from "./StoryMockViews";
 
 const sampleCrop = {
   key: "run-overview",
@@ -124,5 +128,23 @@ describe("StoryProofStage", () => {
 
     expect(screen.getByText("Judge surface")).toBeInTheDocument();
     expect(container.querySelector(".story-proof-stage.proof-left")).not.toBeNull();
+  });
+});
+
+describe("StoryArchitecturePipeline", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("describes the expander stage and the updated frontier depth", () => {
+    render(<StoryArchitecturePipeline />);
+
+    expect(screen.getByText("max 3 discovered frontiers")).toBeInTheDocument();
+    expect(screen.getByText("1 expander")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /the ai search expander proposes cited roots after enrichment/i,
+      ),
+    ).toBeInTheDocument();
   });
 });

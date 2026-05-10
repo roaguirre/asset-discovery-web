@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SurfaceTopbar } from "../components/surface";
 import "./App.css";
 import { CreateRunModal } from "../features/discovery/ui/components/CreateRunModal";
 import { RunOverviewPanel } from "../features/discovery/ui/components/RunOverviewPanel";
@@ -84,7 +85,12 @@ function LiveWorkspaceSurface({ deps }: AppProps) {
 
   if (!workspace.session) {
     return (
-      <main className="live-shell live-auth-shell">
+      <div className="live-auth-shell">
+        <SurfaceTopbar
+          className="auth-topbar"
+          start={<a href="/" className="eyebrow auth-topbar-brand">Asset Discovery</a>}
+        />
+        <main className="live-auth-main">
         <section className="live-auth-card">
           <p className="eyebrow">Discovery Console</p>
           <h1>
@@ -111,7 +117,8 @@ function LiveWorkspaceSurface({ deps }: AppProps) {
             <p className="status-line status-error">{workspace.message}</p>
           ) : null}
         </section>
-      </main>
+        </main>
+      </div>
     );
   }
 

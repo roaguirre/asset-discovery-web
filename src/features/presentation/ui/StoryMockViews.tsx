@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { humanizeToken } from "../../discovery/core/assetTable";
 import { buildTraceChildren } from "../../discovery/core/traceModel";
 import type { LivePivotRecord, TraceNode } from "../../discovery/core/types";
@@ -10,7 +10,12 @@ import {
   type PivotPanelTab,
 } from "../../discovery/ui/views/PivotsView";
 import { ActivityTerminal } from "../../discovery/ui/views/ActivityView";
-import type { CapabilityGroup, StoryCrop } from "./storyModel";
+import type {
+  AISearchExample,
+  AISearchStage,
+  CapabilityGroup,
+  StoryCrop,
+} from "./storyModel";
 import {
   architectureCollectors,
   storyAuditPivots,
@@ -133,10 +138,118 @@ export function StoryCapabilityBand({ group }: { group: CapabilityGroup }) {
   );
 }
 
+function aiSearchStatusLabel(status: AISearchExample["status"]): string {
+  switch (status) {
+    case "accepted":
+      return "Accepted pivot";
+    case "pending_review":
+      return "Pending review";
+    case "discarded":
+      return "Rejected";
+    default:
+      return humanizeToken(status);
+  }
+}
+
+/**
+ * StoryAISearchPipelineMock renders the post-enrichment AI-search stage as an
+ * animated horizontal pipeline: four interactive stage cards connected by
+ * signal-flow dots, followed by two output example cards with status badges.
+ *
+ * Hover (or focus) a stage card to expand its copy. Animations respect
+ * prefers-reduced-motion via CSS.
+ */
+export function StoryAISearchPipelineMock({
+  stages,
+  examples,
+}: {
+  stages: AISearchStage[];
+  examples: AISearchExample[];
+}) {
+  const [hoveredStage, setHoveredStage] = useState<number | null>(null);
+
+  const stageNodes = stages.flatMap((stage, index) => {
+    const card = (
+      <article
+        key={`stage-${stage.title}`}
+        className={`ai-pipeline-stage${hoveredStage === index ? " is-hovered" : ""}`}
+        style={{ "--stage-i": String(index) } as CSSProperties}
+        tabIndex={0}
+        onMouseEnter={() => setHoveredStage(index)}
+        onMouseLeave={() => setHoveredStage(null)}
+        onFocus={() => setHoveredStage(index)}
+        onBlur={() => setHoveredStage(null)}
+      >
+        <div className="ai-pipeline-stage-top">
+          <span className="ai-pipeline-stage-index">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <strong className="ai-pipeline-stage-title">{stage.title}</strong>
+        </div>
+        <div
+          className="ai-pipeline-stage-detail"
+          aria-hidden={hoveredStage !== index}
+        >
+          <p>{stage.copy}</p>
+        </div>
+        <div className="ai-pipeline-chip-row">
+          {stage.chips.map((chip) => (
+            <span key={chip} className="ai-pipeline-chip">
+              {chip}
+            </span>
+          ))}
+        </div>
+      </article>
+    );
+
+    if (index < stages.length - 1) {
+      const connector = (
+        <div
+          key={`conn-${index}`}
+          className="ai-pipeline-connector"
+          aria-hidden="true"
+        >
+          <div className="ai-pipeline-conn-track" />
+          <span className="ai-pipeline-conn-arrow">→</span>
+        </div>
+      );
+      return [card, connector];
+    }
+
+    return [card];
+  });
+
+  return (
+    <div className="story-ai-search-panel" aria-label="AI search expansion workflow">
+      <div className="ai-pipeline-flow">
+        <div className="ai-pipeline-stages">{stageNodes}</div>
+        <div className="ai-pipeline-outputs">
+          {examples.map((example) => (
+            <article
+              key={example.root}
+              className={`ai-pipeline-example is-${example.status}`}
+            >
+              <div className="ai-pipeline-example-meta">
+                <span className={`ai-pipeline-status status-${example.status}`}>
+                  {aiSearchStatusLabel(example.status)}
+                </span>
+                <span className="ai-pipeline-collector">{example.collector}</span>
+              </div>
+              <strong>{example.root}</strong>
+              <p>{example.note}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * StoryArchitecturePipeline replaces the former flat flow + principles cards
  * with a vertical system-design pipeline that shows the full runtime topology:
- * seeds → scheduler → collectors → judge/review → asset store.
+ * seeds → scheduler → collectors/enrichers/expanders → judge/review → asset
+ * store.
  *
  * The scheduler node carries a feedback badge to communicate the closed-loop
  * frontier expansion model without needing a real arrow overlay.
@@ -179,7 +292,7 @@ export function StoryArchitecturePipeline() {
           <span>acyclic</span>
           <span>wave-bounded</span>
           <span>DAG-oriented</span>
-          <span>max 2 discovered frontiers</span>
+          <span>max 3 discovered frontiers</span>
         </div>
         <div className="arch-feedback-badge" aria-label="Feedback loop: accepted pivots return to scheduler">
           <span className="arch-feedback-icon" aria-hidden="true">↰</span>
@@ -206,8 +319,13 @@ export function StoryArchitecturePipeline() {
             </div>
           ))}
         </div>
+        <div className="arch-chips">
+          <span>11 collectors</span>
+          <span>2 enrichers</span>
+          <span>1 expander</span>
+        </div>
         <p className="arch-node-desc arch-node-desc--small">
-          11 collectors total. Every cross-root result is LLM-judged before advancing as a seed.
+          Collectors gather raw signals, enrichers synthesize DNS and IP context, and the AI search expander proposes cited roots after enrichment. Every cross-root result is judged before advancing as a seed.
         </p>
       </div>
 
@@ -222,7 +340,7 @@ export function StoryArchitecturePipeline() {
           <span className="arch-node-tag">LLM · Automated</span>
           <strong className="arch-node-name">Ownership Judge</strong>
           <p className="arch-node-desc">
-            LLM evaluates each cross-root candidate against seed context. Returns confidence, kind, and reasoning. Accepted or discarded — both stay traceable.
+            The same ownership policy evaluates collector candidates and AI-search candidates against seed and run context. Accepted or discarded, both stay traceable.
           </p>
           <div className="arch-chips" style={{marginTop: "6px"}}>
             <span>temp=0</span>

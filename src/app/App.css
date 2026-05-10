@@ -46,11 +46,6 @@ body {
   padding: 20px;
 }
 
-.live-auth-shell {
-  display: grid;
-  place-items: center;
-}
-
 .live-app-shell {
   --topbar-height: 54px;
   --drawer-width: 320px;
@@ -78,6 +73,40 @@ body {
 .live-auth-card {
   max-width: 720px;
   padding: 36px;
+}
+
+.live-auth-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.auth-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.auth-topbar .surface-topbar-inner {
+  height: 52px;
+  padding: 0 24px;
+}
+
+.auth-topbar-brand {
+  text-decoration: none;
+  margin: 0;
+}
+
+.auth-topbar-brand:hover {
+  opacity: 0.75;
+}
+
+.live-auth-main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 24px;
 }
 
 .panel,
@@ -911,6 +940,18 @@ body {
 
 .stat-card strong {
   font-size: 1.45rem;
+}
+
+.stat-card[data-tooltip] {
+  cursor: help;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.stat-card[data-tooltip]:hover,
+.stat-card[data-tooltip]:focus-visible {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  outline: none;
 }
 
 .search-input,
@@ -1911,9 +1952,6 @@ body {
 }
 
 @media (max-width: 720px) {
-  .live-auth-shell {
-    padding: 16px;
-  }
 
   .panel,
   .live-auth-card,

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   SurfaceDrawerOverlay,
   SurfaceDrawerToggleButton,
   SurfaceTopbar,
 } from "../../../components/surface";
+import { AISearchSection } from "./AISearchSection";
 import {
   StoryActivityMock,
   StoryArchitecturePipeline,
@@ -17,6 +18,13 @@ import {
   StoryTraceWorkspaceMock,
 } from "./StoryMockViews";
 import {
+  handleTooltipMove,
+  handleTooltipOverOrFocus,
+  hiddenTooltip,
+  hideTooltip,
+} from "../../discovery/ui/tooltip";
+import {
+  storyAISearchSection,
   storyCapabilityGroups,
   storyCrops,
   storyObservationBlocks,
@@ -137,7 +145,12 @@ function useScrollProgress(
   }, [shellRef, barRef]);
 }
 
-const sectionAnchors = ["#promise", "#walkthrough", "#architecture", "#open-source"];
+const sectionAnchors = [
+  "#promise",
+  "#walkthrough",
+  "#architecture",
+  "#open-source",
+];
 
 /**
  * Tracks which navigation anchor occupies the vertical center of the scroll
@@ -284,8 +297,23 @@ export function PresentationSite({
     ? "story-topbar is-compact"
     : "story-topbar";
 
+  const scrollToTop = useCallback(() => {
+    shellRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [shellRef]);
+
+  const [tooltip, setTooltip] = useState(hiddenTooltip);
+
   return (
-    <main className="story-shell" id="top" ref={shellRef}>
+    <main
+      className="story-shell"
+      id="top"
+      ref={shellRef}
+      onMouseOver={(event) => handleTooltipOverOrFocus(event, setTooltip)}
+      onMouseMove={(event) => handleTooltipMove(event, setTooltip)}
+      onMouseLeave={() => hideTooltip(setTooltip)}
+      onFocus={(event) => handleTooltipOverOrFocus(event, setTooltip)}
+      onBlur={() => hideTooltip(setTooltip)}
+    >
       <div className="story-scroll-progress" ref={progressRef} aria-hidden="true" />
       <div className="story-orbit story-orbit-one" aria-hidden="true" />
       <div className="story-orbit story-orbit-two" aria-hidden="true" />
@@ -315,10 +343,7 @@ export function PresentationSite({
                   : "story-brand-lockup"
               }
             >
-              <p className="eyebrow">Asset Discovery</p>
-              <strong className="story-brand">
-                AI-guided discovery with visible reasoning.
-              </strong>
+              <button type="button" className="eyebrow story-brand-eyebrow story-brand-btn" onClick={scrollToTop}>Asset Discovery</button>
             </div>
           </div>
         }
@@ -386,10 +411,7 @@ export function PresentationSite({
           <div className="story-drawer-inner">
             <div className="story-drawer-header">
               <div className="story-brand-lockup is-compact-drawer">
-                <p className="eyebrow">Asset Discovery</p>
-                <strong className="story-brand">
-                  AI-guided discovery with visible reasoning.
-                </strong>
+                <button type="button" className="eyebrow story-brand-eyebrow story-brand-btn" onClick={scrollToTop}>Asset Discovery</button>
               </div>
             </div>
 
@@ -642,23 +664,31 @@ export function PresentationSite({
           <p className="eyebrow">System Design</p>
           <h2>Every pivot is an explicit decision. Discovery stays bounded by design.</h2>
           <p>
-            The pipeline is acyclic by design. An LLM gates every ownership
-            claim at the collector boundary, accepted pivots return to the
-            scheduler as new frontier seeds, and the asset store deduplicates
-            across waves by identity.
+            The pipeline is acyclic by design. Collectors gather raw signals,
+            enrichers add DNS, IP, and registration context, and a
+            post-enrichment AI search expander can propose cited registrable
+            roots from the current run state. Those candidates still pass
+            through the same ownership judge and pivot review path before they
+            become visible assets or frontier seeds.
           </p>
           <p>
-            After all frontier waves are exhausted, <strong>bounded
+            Accepted pivots return to the scheduler for up to <strong>three
+            discovered frontiers</strong> beyond the initial seeds. After all
+            normal frontier waves are exhausted, <strong>bounded
             reconsideration</strong> re-evaluates every discarded candidate
-            once — with the full accepted-asset set in context. Confidence
-            scores that were borderline at collection time may shift. Promoted
+            once with the full accepted-asset set in context. Promoted
             candidates seed exactly one additional wave; the run then closes.
             No silent expansion, no unbounded recursion.
           </p>
         </div>
-        <div className="story-architecture-visual">
+        <div className="story-architecture-visual" data-reveal="slide-left">
           <StoryArchitecturePipeline />
         </div>
+        <AISearchSection
+          className="story-architecture-ai-search"
+          headingLevel="h3"
+          section={storyAISearchSection}
+        />
       </section>
 
       <section className="story-section" id="open-source">
@@ -712,11 +742,21 @@ export function PresentationSite({
           >
             {primaryActionLabel}
           </button>
-          <a className="ghost-button" href="#top">
+          <button type="button" className="ghost-button" onClick={scrollToTop}>
             Back To Top
-          </a>
+          </button>
         </div>
       </section>
+
+      {tooltip.visible ? (
+        <div
+          role="tooltip"
+          className={`live-tooltip is-${tooltip.placement}`}
+          style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }}
+        >
+          {tooltip.text}
+        </div>
+      ) : null}
 
     </main>
   );

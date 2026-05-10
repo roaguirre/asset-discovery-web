@@ -54,10 +54,19 @@ export function OwnershipPill({ value }: { value: string | undefined }) {
 
 /**
  * StatCard renders one run overview metric with a consistent visual shell.
+ * Pass tooltip to surface an explanation on hover and keyboard focus.
  */
-export function StatCard({ label, value }: { label: string; value: string }) {
+export function StatCard({
+  label,
+  value,
+  tooltip,
+}: {
+  label: string;
+  value: string;
+  tooltip?: string;
+}) {
   return (
-    <article className="stat-card">
+    <article className="stat-card" data-tooltip={tooltip}>
       <span>{label}</span>
       <strong>{value}</strong>
     </article>

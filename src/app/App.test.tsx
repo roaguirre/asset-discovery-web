@@ -256,10 +256,10 @@ describe("App", () => {
     const storyTopbar = document.querySelector(".story-topbar");
     expect(storyTopbar).not.toBeNull();
     expect(
-      within(storyTopbar as HTMLElement).getByText(
-        "AI-guided discovery with visible reasoning.",
-      ),
-    ).toBeInTheDocument();
+      within(storyTopbar as HTMLElement).getByRole("button", {
+        name: "Asset Discovery",
+      }),
+    ).toBeVisible();
     expect(
       within(storyTopbar as HTMLElement).getByRole("link", { name: "Evidence" }),
     ).toBeVisible();
@@ -366,6 +366,11 @@ describe("App", () => {
     expect(
       within(drawer).getByRole("link", { name: "Evidence" }),
     ).toHaveAttribute("href", "#promise");
+    expect(
+      within(drawer).getByRole("link", {
+        name: "Architecture",
+      }),
+    ).toHaveAttribute("href", "#architecture");
     expect(
       within(drawer).getByRole("link", {
         name: /roaguirre\/asset-discovery-web/i,

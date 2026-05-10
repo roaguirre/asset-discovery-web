@@ -22,6 +22,7 @@ describe("presentation surface helpers", () => {
 
   it("leaves presentation anchors out of live workspace detection", () => {
     expect(hasLiveHashState("#workflow")).toBe(false);
+    expect(hasLiveHashState("#architecture")).toBe(false);
     expect(hasLiveHashState("#open-source")).toBe(false);
     expect(hasLiveHashState("")).toBe(false);
   });
