@@ -207,6 +207,11 @@ export function useWorkspace(deps: LiveAppDeps) {
     [deps],
   );
 
+  /*
+   * Workspace reset effects intentionally synchronize auth, route, and
+   * viewport changes into local UI state that is owned by this hook.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const syncRoute = () => {
       const next = parseLiveHash(window.location.hash);
@@ -396,6 +401,7 @@ export function useWorkspace(deps: LiveAppDeps) {
       setSelectedTraceNodeID(initialNodeID);
     }
   }, [selectedTrace, selectedTraceNodeID]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (
